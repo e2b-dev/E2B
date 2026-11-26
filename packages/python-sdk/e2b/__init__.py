@@ -115,6 +115,7 @@ from .sandbox.sandbox_api import (
     SandboxNetworkTransformResolver,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    SandboxOnResumeOptions,
     SandboxListOrder,
     SandboxQuery,
     SandboxState,
@@ -272,6 +273,7 @@ __all__ = [
     "SandboxLifecycle",
     "SandboxOnTimeout",
     "SandboxOnResume",
+    "SandboxOnResumeOptions",
     "ALL_TRAFFIC",
     # IAM
     "SandboxIamOpts",

@@ -881,12 +881,31 @@ export interface paths {
         put?: never;
         /**
          * Create a secret
-         * @description Create a secret by storing a runtime marker as its first version. The response carries metadata only.
+         * @description Create a secret by storing a runtime marker as its first version. The response carries metadata only. The value is not part of the Idempotency-Key comparison: reusing a key with a different value replays the first result.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /**
+                     * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+                     *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+                     *     and request content identify the request. When idempotency is enabled, a matching retry of
+                     *     a completed request replays its status and body, including the IDs of any resources it
+                     *     created, without repeating the operation. A failure explicitly classified as safe to retry
+                     *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+                     *     attempt can run at a time. A different request returns 409 with error_code
+                     *     idempotency_request_mismatch. A matching request whose original has no recorded response
+                     *     yet and is within its expected response window returns 409 with error_code
+                     *     idempotency_in_progress. A matching request whose original has no recorded response and
+                     *     whose expected response deadline has passed or is unknown returns 422 with error_code
+                     *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+                     *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+                     *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+                     *     retention period expires, the key can start a new operation.
+                     */
+                    "Idempotency-Key"?: components["parameters"]["idempotencyKey"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -905,12 +924,29 @@ export interface paths {
                         "application/json": components["schemas"]["Secret"];
                     };
                 };
-                400: components["responses"]["400"];
+                /** @description Invalid request or value too large */
+                400: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 401: components["responses"]["401"];
-                403: components["responses"]["403"];
-                404: components["responses"]["404"];
-                /** @description Secret name conflict or project live-secret limit reached. A quota response has error_code secret_limit_reached and, when reported by the backend, the effective cap in message. */
-                409: {
+                /** @description Forbidden, blocked team, or secrets unavailable */
+                403: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Backend secret not found; creation may have partially committed */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -918,10 +954,76 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                /** @description Secret name conflict or project live-secret limit reached. A quota response has error_code secret_limit_reached and, when reported by the backend, the effective cap in message. With an Idempotency-Key, also returned when the key conflicts with a different request (error_code idempotency_request_mismatch), or the matching original request has no recorded response yet and is within its expected response window (error_code idempotency_in_progress); this request was not executed again. */
+                409: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Request body exceeds the size limit */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The matching original request has no recorded response and its expected response deadline has passed or is unknown (error_code idempotency_outcome_unknown); this request was not executed again */
+                422: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 429: components["responses"]["429"];
-                500: components["responses"]["500"];
-                502: components["responses"]["502"];
-                504: components["responses"]["504"];
+                /** @description Server error */
+                500: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Backend error */
+                502: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description With an Idempotency-Key, the request result is unavailable because the idempotency record could not be reserved or read, or idempotency is misconfigured; this request was not executed. Should-Retry true means a retry with the same Idempotency-Key may succeed; false means configuration must be corrected. */
+                503: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Deadline exceeded */
+                504: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -3170,8 +3272,12 @@ export interface components {
             timeout: number;
         };
         ConnectSandboxV2: {
+            /** @description Online vCPU target for the sandbox when this connect resumes it, from its memory snapshot or by cold-booting (memory false). Defaults to the snapshot's cpuCount; for a resizable template (one with maxCpuCount) that count is lowered to the team's vCPU limit when above it. A requested count is at most the template's maxCpuCount (fixed-size templates accept only their cpuCount) and the team's vCPU limit, and is refused when resizable templates are not enabled for the team. Like memoryMB: a sandbox that is already running keeps its count and the field is ignored. For a paused sandbox, a count the snapshot or the team cannot take is refused with 400; a count it can take applies only when this connect resumes the sandbox, and is ignored when another request is already resuming it. The response's cpuCount reports the count the sandbox runs with. */
+            cpuCount?: components["schemas"]["CPUCount"];
             /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
+            /** @description Memory for the sandbox in MiB when this connect resumes it, from its memory snapshot or by cold-booting (memory false). Defaults to the memory the sandbox had when it was paused; at least that, and at most the template's maxMemoryMB, in steps of 128 MiB above its memoryMB. A sandbox that is already running keeps its size and the field is ignored. For a paused sandbox, a size the snapshot or the team cannot take is refused with 400; a size it can take applies only when this connect resumes the sandbox, and is ignored when another request is already resuming it. The response's memoryMB reports the size the sandbox runs with. */
+            memoryMB?: components["schemas"]["MemoryMB"];
             /**
              * Format: int32
              * @description Timeout in seconds from the current time after which the sandbox should expire
@@ -3208,7 +3314,7 @@ export interface components {
              * @description Error code
              */
             code: number;
-            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown, cluster_registration_invalid, cluster_registration_conflict, cluster_assignment_invalid, cluster_assignment_project_not_found, cluster_assignment_cluster_not_found, cluster_assignment_already_assigned, cluster_assignment_cluster_deleting, sandbox_snapshot_guest_agent_unresponsive (a plain resume of a snapshot taken while the sandbox guest agent was not responding; resume it with memory: false). */
+            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown, sandbox_snapshot_guest_agent_unresponsive (a plain resume of a snapshot taken while the sandbox guest agent was not responding; resume it with memory: false). */
             error_code?: string;
             /** @description Error */
             message: string;
@@ -3335,6 +3441,8 @@ export interface components {
             envVars?: components["schemas"]["EnvVars"];
             iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
+            /** @description Memory for the sandbox in MiB. Defaults to the template's memoryMB; at most its maxMemoryMB, in steps of 128 MiB above memoryMB (templates without a maxMemoryMB accept only their memoryMB). */
+            memoryMB?: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
             /**
@@ -3372,6 +3480,8 @@ export interface components {
             envVars?: components["schemas"]["EnvVars"];
             iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
+            /** @description Memory for the sandbox in MiB. Defaults to the template's memoryMB; at most its maxMemoryMB, in steps of 128 MiB above memoryMB (templates without a maxMemoryMB accept only their memoryMB). */
+            memoryMB?: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Identifier of the required template */
@@ -3414,6 +3524,8 @@ export interface components {
             cpuCount?: components["schemas"]["CPUCount"];
             /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
+            /** @description Memory for the resumed sandbox in MiB. Defaults to the memory the sandbox had when it was paused; at least that, and at most the template's maxMemoryMB, in steps of 128 MiB above its memoryMB. */
+            memoryMB?: components["schemas"]["MemoryMB"];
             /**
              * Format: int32
              * @description Time to live for the sandbox in seconds.
@@ -3429,11 +3541,15 @@ export interface components {
              * @description Identifier of the client
              */
             clientID: string;
+            /** @description Online vCPUs the sandbox runs with. A connect reports the count of the sandbox it returns, which differs from a requested cpuCount when the request was ignored. Absent from older API versions. */
+            cpuCount?: components["schemas"]["CPUCount"];
             /** @description Base domain where the sandbox traffic is accessible */
             domain?: string | null;
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             envdVersion: components["schemas"]["EnvdVersion"];
+            /** @description Memory the sandbox runs with in MiB. A connect reports the size of the sandbox it returns, which differs from a requested memoryMB when the request was ignored. While the API does not know a sandbox's size (it was started by an older API version, for example), this reports its boot RAM. Absent from older API versions. */
+            memoryMB?: components["schemas"]["MemoryMB"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /** @description Identifier of the template from which is the sandbox created */
@@ -3950,6 +4066,9 @@ export interface components {
             lastSpawnedAt: string | null;
             /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
             maxCpuCount?: components["schemas"]["CPUCount"];
+            /** @description Memory the template's sandboxes can grow to, in MiB; absent for templates whose memory cannot grow. */
+            maxMemoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Memory in MiB a sandbox created from this template starts with: the build's memory, or for a snapshot template of a grown sandbox the size it was taken at. A create that names no memoryMB starts at this size. */
             memoryMB: components["schemas"]["MemoryMB"];
             /** @description Names of the template (namespace/alias format when namespaced) */
             names: string[];
@@ -3995,6 +4114,9 @@ export interface components {
             finishedAt?: string;
             /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
             maxCpuCount?: components["schemas"]["CPUCount"];
+            /** @description Memory the template's sandboxes can grow to, in MiB; absent for templates whose memory cannot grow. */
+            maxMemoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Memory in MiB a sandbox created from this build starts with: the build's memory, or for a snapshot of a grown sandbox the size it was taken at. A create that names no memoryMB starts at this size. */
             memoryMB: components["schemas"]["MemoryMB"];
             status: components["schemas"]["TemplateBuildStatus"];
             /**
@@ -4048,6 +4170,8 @@ export interface components {
             cpuCount?: components["schemas"]["CPUCount"];
             /** @description Maximum CPU count the template's sandboxes can be resized to; makes the template resizable. Must be at least cpuCount. */
             maxCpuCount?: components["schemas"]["CPUCount"];
+            /** @description Memory the template's sandboxes can grow to, in MiB. memoryMB is what they boot with; the rest is added when a sandbox asks for it. Must be at least memoryMB, and the difference a multiple of 128 MiB. */
+            maxMemoryMB?: components["schemas"]["MemoryMB"];
             memoryMB?: components["schemas"]["MemoryMB"];
             minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */

@@ -21,16 +21,24 @@ class ConnectSandboxV2:
             contain no memory. Rejected with an error in environments where this capability is not enabled, never silently
             downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding
             (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement.
+        memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
+        cpu_count (Union[Unset, int]): CPU cores for the sandbox
     """
 
     timeout: Union[Unset, int] = 300
     memory: Union[Unset, bool] = UNSET
+    memory_mb: Union[Unset, int] = UNSET
+    cpu_count: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         timeout = self.timeout
 
         memory = self.memory
+
+        memory_mb = self.memory_mb
+
+        cpu_count = self.cpu_count
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -39,6 +47,10 @@ class ConnectSandboxV2:
             field_dict["timeout"] = timeout
         if memory is not UNSET:
             field_dict["memory"] = memory
+        if memory_mb is not UNSET:
+            field_dict["memoryMB"] = memory_mb
+        if cpu_count is not UNSET:
+            field_dict["cpuCount"] = cpu_count
 
         return field_dict
 
@@ -49,9 +61,15 @@ class ConnectSandboxV2:
 
         memory = d.pop("memory", UNSET)
 
+        memory_mb = d.pop("memoryMB", UNSET)
+
+        cpu_count = d.pop("cpuCount", UNSET)
+
         connect_sandbox_v2 = cls(
             timeout=timeout,
             memory=memory,
+            memory_mb=memory_mb,
+            cpu_count=cpu_count,
         )
 
         connect_sandbox_v2.additional_properties = d

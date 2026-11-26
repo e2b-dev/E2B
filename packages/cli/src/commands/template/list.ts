@@ -87,6 +87,10 @@ export function renderTemplateTable(templates: TemplateInfo[]) {
     },
     { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
     {
+      header: 'Max RAM MiB',
+      value: (template) => template.maxMemoryMB?.toString(),
+    },
+    {
       header: 'Created at',
       value: (template) => template.createdAt.toLocaleDateString(),
     },

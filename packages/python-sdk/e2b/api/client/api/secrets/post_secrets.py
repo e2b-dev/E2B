@@ -8,14 +8,17 @@ from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.new_secret import NewSecret
 from ...models.secret import Secret
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
     body: NewSecret,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(idempotency_key, Unset):
+        headers["Idempotency-Key"] = idempotency_key
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -57,6 +60,14 @@ def _parse_response(
         response_409 = Error.from_dict(response.json())
 
         return response_409
+    if response.status_code == 413:
+        response_413 = Error.from_dict(response.json())
+
+        return response_413
+    if response.status_code == 422:
+        response_422 = Error.from_dict(response.json())
+
+        return response_422
     if response.status_code == 429:
         response_429 = Error.from_dict(response.json())
 
@@ -69,6 +80,10 @@ def _parse_response(
         response_502 = Error.from_dict(response.json())
 
         return response_502
+    if response.status_code == 503:
+        response_503 = Error.from_dict(response.json())
+
+        return response_503
     if response.status_code == 504:
         response_504 = Error.from_dict(response.json())
 
@@ -94,13 +109,16 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: NewSecret,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, Secret]]:
     """Create a secret
 
      Create a secret by storing a runtime marker as its first version. The response carries metadata
-    only.
+    only. The value is not part of the Idempotency-Key comparison: reusing a key with a different value
+    replays the first result.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSecret):
 
     Raises:
@@ -113,6 +131,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = client.get_httpx_client().request(
@@ -126,13 +145,16 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: NewSecret,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, Secret]]:
     """Create a secret
 
      Create a secret by storing a runtime marker as its first version. The response carries metadata
-    only.
+    only. The value is not part of the Idempotency-Key comparison: reusing a key with a different value
+    replays the first result.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSecret):
 
     Raises:
@@ -146,6 +168,7 @@ def sync(
     return sync_detailed(
         client=client,
         body=body,
+        idempotency_key=idempotency_key,
     ).parsed
 
 
@@ -153,13 +176,16 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: NewSecret,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, Secret]]:
     """Create a secret
 
      Create a secret by storing a runtime marker as its first version. The response carries metadata
-    only.
+    only. The value is not part of the Idempotency-Key comparison: reusing a key with a different value
+    replays the first result.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSecret):
 
     Raises:
@@ -172,6 +198,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -183,13 +210,16 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: NewSecret,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, Secret]]:
     """Create a secret
 
      Create a secret by storing a runtime marker as its first version. The response carries metadata
-    only.
+    only. The value is not part of the Idempotency-Key comparison: reusing a key with a different value
+    replays the first result.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSecret):
 
     Raises:
@@ -204,5 +234,6 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             body=body,
+            idempotency_key=idempotency_key,
         )
     ).parsed

@@ -50,6 +50,12 @@ export type BasicBuildOptions = {
    */
   memoryMB?: number
   /**
+   * Memory in MiB a sandbox can grow to. Setting it makes the template's memory
+   * resizable: sandboxes boot with `memoryMB` and can ask for more on create.
+   * Must be at least `memoryMB`, and the difference a multiple of 128 MiB.
+   */
+  maxMemoryMB?: number
+  /**
    * Requested minimum free space for the template filesystem after the build steps
    * have run, in MiB. Growth is best effort and the filesystem is never shrunk.
    * Omit to use the team default or set to 0 to request no growth.
@@ -223,9 +229,14 @@ export type TemplateInfo = {
    */
   maxCpuCount?: number
   /**
-   * Amount of memory in MiB allocated to the sandbox.
+   * Amount of memory in MiB a sandbox created from the template starts with.
    */
   memoryMB: number
+  /**
+   * Memory in MiB a sandbox can be started with at most. Set only for templates
+   * whose memory is resizable.
+   */
+  maxMemoryMB?: number
   /**
    * Disk size in MiB of the sandbox.
    */
@@ -270,6 +281,7 @@ export function convertTemplateInfo(
     cpuCount: template.cpuCount,
     ...(template.maxCpuCount != null && { maxCpuCount: template.maxCpuCount }),
     memoryMB: template.memoryMB,
+    ...(template.maxMemoryMB != null && { maxMemoryMB: template.maxMemoryMB }),
     diskSizeMB: template.diskSizeMB,
     envdVersion: template.envdVersion,
     buildCount: template.buildCount,
@@ -304,9 +316,14 @@ export type TemplateBuildInfo = {
    */
   maxCpuCount?: number
   /**
-   * Amount of memory in MiB allocated to the sandbox.
+   * Amount of memory in MiB a sandbox created from the build starts with.
    */
   memoryMB: number
+  /**
+   * Memory in MiB a sandbox can be started with at most. Set only for builds
+   * whose memory is resizable.
+   */
+  maxMemoryMB?: number
   /**
    * Disk size in MiB of the sandbox.
    */
@@ -338,6 +355,7 @@ export function convertTemplateBuildInfo(
     cpuCount: build.cpuCount,
     ...(build.maxCpuCount != null && { maxCpuCount: build.maxCpuCount }),
     memoryMB: build.memoryMB,
+    ...(build.maxMemoryMB != null && { maxMemoryMB: build.maxMemoryMB }),
     ...(build.diskSizeMB != null && { diskSizeMB: build.diskSizeMB }),
     ...(build.envdVersion != null && { envdVersion: build.envdVersion }),
     createdAt: new Date(build.createdAt),

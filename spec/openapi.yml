@@ -1102,6 +1102,23 @@ components:
           type: string
           nullable: true
           description: Base domain where the sandbox traffic is accessible
+        cpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: >-
+            Online vCPUs the sandbox runs with. A connect reports the count of
+            the sandbox it returns, which differs from a requested cpuCount when
+            the request was ignored. Absent from older API versions.
+        memoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory the sandbox runs with in MiB. A connect reports the size of
+            the sandbox it returns, which differs from a requested memoryMB
+            when the request was ignored. While the API does not know a
+            sandbox's size (it was started by an older API version, for
+            example), this reports its boot RAM. Absent from older API
+            versions.
 
     SandboxDetail:
       required:
@@ -1300,6 +1317,13 @@ components:
             Online vCPU target for the sandbox. Defaults to the template's
             cpuCount; at most its maxCpuCount (fixed-size templates accept only
             their cpuCount).
+        memoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory for the sandbox in MiB. Defaults to the template's memoryMB;
+            at most its maxMemoryMB, in steps of 128 MiB above memoryMB
+            (templates without a maxMemoryMB accept only their memoryMB).
         autoPause:
           type: boolean
           default: false
@@ -1364,6 +1388,13 @@ components:
             Online vCPU target for the sandbox. Defaults to the template's
             cpuCount; at most its maxCpuCount (fixed-size templates accept only
             their cpuCount).
+        memoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory for the sandbox in MiB. Defaults to the template's memoryMB;
+            at most its maxMemoryMB, in steps of 128 MiB above memoryMB
+            (templates without a maxMemoryMB accept only their memoryMB).
         autoPause:
           type: boolean
           default: false
@@ -1445,6 +1476,13 @@ components:
             Online vCPU target for the resumed sandbox. Defaults to the
             snapshot's cpuCount; at most the template's maxCpuCount
             (fixed-size templates accept only their cpuCount).
+        memoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory for the resumed sandbox in MiB. Defaults to the memory the
+            sandbox had when it was paused; at least that, and at most the
+            template's maxMemoryMB, in steps of 128 MiB above its memoryMB.
         autoPause:
           type: boolean
           deprecated: true
@@ -1505,6 +1543,38 @@ components:
             snapshot taken while the sandbox guest agent was not responding
             (envdUnresponsiveAtPause) can only be resumed this way, and needs no
             enablement.
+        memoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory for the sandbox in MiB when this connect resumes it, from its
+            memory snapshot or by cold-booting (memory false). Defaults to the
+            memory the sandbox had when it was paused; at least that, and at most
+            the template's maxMemoryMB, in steps of 128 MiB above its memoryMB.
+            A sandbox that is already running keeps its size and the field is
+            ignored. For a paused sandbox, a size the snapshot or the team
+            cannot take is refused with 400; a size it can take applies only
+            when this connect resumes the sandbox, and is ignored when another
+            request is already resuming it. The response's memoryMB reports
+            the size the sandbox runs with.
+        cpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: >-
+            Online vCPU target for the sandbox when this connect resumes it,
+            from its memory snapshot or by cold-booting (memory false).
+            Defaults to the snapshot's cpuCount; for a resizable template
+            (one with maxCpuCount) that count is lowered to the team's vCPU
+            limit when above it. A requested count is at most the template's
+            maxCpuCount (fixed-size templates accept only their cpuCount) and
+            the team's vCPU limit, and is refused when resizable templates are
+            not enabled for the team. Like memoryMB: a sandbox that is already
+            running keeps its count and the field is ignored. For a paused
+            sandbox, a count the snapshot or the team cannot take is refused
+            with 400; a count it can take applies only when this connect
+            resumes the sandbox, and is ignored when another request is
+            already resuming it. The response's cpuCount reports the count the
+            sandbox runs with.
 
     SandboxTimeoutRequest:
       type: object
@@ -1737,94 +1807,6 @@ components:
         limits:
           $ref: "#/components/schemas/TeamLimits"
 
-    ClusterDetail:
-      type: object
-      description: A cluster's configuration. The cluster's token is never returned.
-      required:
-        - id
-        - name
-        - endpoint
-        - endpointTls
-        - deletionProtection
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        endpoint:
-          type: string
-        endpointTls:
-          type: boolean
-        sandboxProxyDomain:
-          type: string
-          nullable: true
-        authOrgId:
-          type: string
-          nullable: true
-        deletionProtection:
-          type: boolean
-          description: While true, deleting the cluster is refused.
-
-    ClusterDetailWithTeams:
-      type: object
-      required:
-        - cluster
-        - teams
-        - teamCount
-        - templateCount
-      properties:
-        cluster:
-          $ref: "#/components/schemas/ClusterDetail"
-        teams:
-          $ref: "#/components/schemas/ClusterTeamListResponse"
-        teamCount:
-          type: integer
-          format: int64
-          description: Teams assigned to the cluster. Must be 0 before the cluster can be deleted.
-        templateCount:
-          type: integer
-          format: int64
-          description: Live templates on the cluster. Deleting the cluster deletes them.
-
-    ClusterListItem:
-      type: object
-      required:
-        - id
-        - name
-        - endpoint
-        - teamCount
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        endpoint:
-          type: string
-        sandboxProxyDomain:
-          type: string
-          nullable: true
-        teamCount:
-          type: integer
-          format: int64
-          description: Number of teams assigned to the cluster.
-
-    ClusterListResponse:
-      type: object
-      required:
-        - items
-        - total
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ClusterListItem"
-        total:
-          type: integer
-          format: int64
-          description: Number of clusters matching the search, ignoring limit and offset
-
     ClusterTeamListItem:
       type: object
       required:
@@ -1850,6 +1832,30 @@ components:
           type: string
           format: date-time
 
+    ClusterTeamCount:
+      type: object
+      required:
+        - clusterId
+        - teamCount
+      properties:
+        clusterId:
+          type: string
+          format: uuid
+        teamCount:
+          type: integer
+          format: int64
+          description: Number of live teams assigned to the cluster
+
+    ClusterTeamCountList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClusterTeamCount"
+
     ClusterTeamListResponse:
       type: object
       required:
@@ -1864,74 +1870,6 @@ components:
           type: integer
           format: int64
           description: Number of teams assigned to the cluster, ignoring limit and offset
-
-    AdminClusterCreateRequest:
-      type: object
-      required:
-        - name
-        - endpoint
-        - endpoint_tls
-        - token
-      properties:
-        cluster_id:
-          type: string
-          format: uuid
-          description: Optional stable identifier for idempotent creation. Reuse succeeds only when the immutable configuration is identical.
-        name:
-          type: string
-          minLength: 1
-        endpoint:
-          type: string
-          minLength: 1
-        endpoint_tls:
-          type: boolean
-        token:
-          type: string
-          minLength: 1
-        sandbox_proxy_domain:
-          type: string
-          nullable: true
-        auth_org_id:
-          type: string
-          nullable: true
-
-        telemetry_client_id:
-          type: string
-          minLength: 1
-
-    ClusterUpdateRequest:
-      type: object
-      description: >-
-        Partial update; only the properties present are written. An explicit
-        null or an empty string clears `sandboxProxyDomain` or `authOrgId`.
-      properties:
-        name:
-          type: string
-          minLength: 1
-        endpoint:
-          type: string
-          minLength: 1
-        endpointTls:
-          type: boolean
-        sandboxProxyDomain:
-          type: string
-          nullable: true
-        authOrgId:
-          type: string
-          nullable: true
-        deletionProtection:
-          type: boolean
-
-    ClusterTokenRotateRequest:
-      type: object
-      required:
-        - token
-      properties:
-        token:
-          type: string
-          minLength: 1
-          format: password
-          description: New cluster access token. Write-only.
 
     AdminSandboxKillResult:
       required:
@@ -2762,7 +2700,16 @@ components:
             - $ref: "#/components/schemas/CPUCount"
           description: "Maximum CPU count for resizable templates; absent for fixed-size templates."
         memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory in MiB a sandbox created from this template starts with: the
+            build's memory, or for a snapshot template of a grown sandbox the size it
+            was taken at. A create that names no memoryMB starts at this size.
+        maxMemoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: "Memory the template's sandboxes can grow to, in MiB; absent for templates whose memory cannot grow."
         diskSizeMB:
           $ref: "#/components/schemas/DiskSizeMB"
         public:
@@ -3047,7 +2994,16 @@ components:
             - $ref: "#/components/schemas/CPUCount"
           description: "Maximum CPU count for resizable templates; absent for fixed-size templates."
         memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory in MiB a sandbox created from this build starts with: the build's
+            memory, or for a snapshot of a grown sandbox the size it was taken at.
+            A create that names no memoryMB starts at this size.
+        maxMemoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: "Memory the template's sandboxes can grow to, in MiB; absent for templates whose memory cannot grow."
         diskSizeMB:
           $ref: "#/components/schemas/DiskSizeMB"
         envdVersion:
@@ -3209,6 +3165,13 @@ components:
           description: "Maximum CPU count the template's sandboxes can be resized to; makes the template resizable. Must be at least cpuCount."
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
+        maxMemoryMB:
+          allOf:
+            - $ref: "#/components/schemas/MemoryMB"
+          description: >-
+            Memory the template's sandboxes can grow to, in MiB. memoryMB is
+            what they boot with; the rest is added when a sandbox asks for it.
+            Must be at least memoryMB, and the difference a multiple of 128 MiB.
         minFreeDiskMb:
           $ref: "#/components/schemas/MinFreeDiskMb"
 
@@ -4057,10 +4020,7 @@ components:
             count out of bounds in the stored build; a server error, since no
             request field reaches that check), internal_server_error,
             secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress,
-            idempotency_outcome_unknown, cluster_registration_invalid,
-            cluster_registration_conflict, cluster_assignment_invalid,
-            cluster_assignment_project_not_found, cluster_assignment_cluster_not_found,
-            cluster_assignment_already_assigned, cluster_assignment_cluster_deleting,
+            idempotency_outcome_unknown,
             sandbox_snapshot_guest_agent_unresponsive (a plain resume of a
             snapshot taken while the sandbox guest agent was not responding;
             resume it with memory: false).
@@ -4559,36 +4519,6 @@ components:
           type: string
           nullable: true
           description: Cursor to pass to the next list request, or null when there is no next page.
-    ManagementClusterRegistrationRequest:
-      type: object
-      required:
-        - name
-        - endpoint
-        - endpoint_tls
-        - token
-      properties:
-        name:
-          type: string
-          minLength: 1
-        endpoint:
-          type: string
-          minLength: 1
-        endpoint_tls:
-          type: boolean
-        token:
-          type: string
-          minLength: 1
-        sandbox_proxy_domain:
-          type: string
-          nullable: true
-        auth_org_id:
-          type: string
-          nullable: true
-
-        telemetry_client_id:
-          type: string
-          minLength: 1
-
     ManagementClusterProjects:
       type: object
       required: [project_ids]
@@ -4635,8 +4565,7 @@ components:
       type: object
       description: >-
         The properties of a project this side stores. Name, slug and email are
-        synchronized on every push. The optional cluster assignment is preserved
-        when omitted.
+        synchronized on every accepted push. The cluster is fixed at creation.
 
 
         A project's tier is not among them, and this side assigns none. Limits
@@ -4646,7 +4575,10 @@ components:
         cluster_id:
           type: string
           format: uuid
-          description: Cluster assignment to synchronize. Omission preserves the existing assignment.
+          description: >-
+            Remote cluster fixed at creation. Omit to create a local project or to preserve an
+            existing project's cluster. A different cluster returns 409. The response reports
+            the stored cluster; local projects omit it.
         name:
           type: string
           minLength: 1
@@ -7960,36 +7892,10 @@ paths:
   /unstable/management/clusters/{clusterID}:
     parameters:
       - $ref: "#/components/parameters/clusterID"
-    put:
-      operationId: managementRegisterCluster
-      summary: Register a cluster.
-      description: A cluster registered here for the first time starts with deletion protection turned off. Registering an existing cluster again with the same auth organization updates its endpoint, TLS setting, sandbox proxy domain and token, while preserving its regional display name and deletion protection, then sets a telemetry client ID the cluster does not have yet. An omitted telemetry client ID preserves the stored one. A different auth organization returns a conflict with error_code cluster_registration_conflict, and so does a telemetry client ID different from the stored one, after the endpoint, TLS setting, sandbox proxy domain and token are updated. An invalid registration returns 400 with error_code cluster_registration_invalid.
-      tags: [admin]
-      security:
-        - AdminJWTAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ManagementClusterRegistrationRequest"
-      responses:
-        "204":
-          description: Cluster registration is present.
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
     delete:
       operationId: managementDeleteCluster
       summary: Delete a cluster and its environments.
-      description: Deletes a cluster after all team assignments are detached. Deletion protection on the cluster rejects the deletion, and so does a live team assignment, before anything changes. In one transaction it then soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history, and afterwards the cluster service deletes the cluster. A team assigned between those two steps returns a conflict with the templates already deleted; repeating the deletion once that team is detached completes it. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+      description: Deletes a cluster after all team assignments are detached. Deletion protection on the cluster rejects the deletion, and so does a live team assignment, before anything changes. In one transaction, which no team assignment can interleave with, it then soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history; the cluster service records the deletion and then deletes the cluster. An assignment requested meanwhile waits and is then refused. If the cluster service does not delete the cluster, nothing is soft-deleted and the cluster stays recorded as being deleted. Deleting an absent cluster still releases its templates, and is refused while a live team is assigned to it. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
       tags: [admin]
       security:
         - AdminJWTAuth: []
@@ -8007,42 +7913,22 @@ paths:
         "503":
           $ref: "#/components/responses/503"
 
-  /unstable/management/clusters/{clusterID}/telemetry:
+  /unstable/management/clusters/{clusterID}/registration:
     parameters:
       - $ref: "#/components/parameters/clusterID"
-    put:
-      operationId: managementUpdateClusterTelemetry
-      summary: Update the telemetry identity of an existing cluster.
-      description: Changes only the telemetry client mapping. Missing or deleting clusters are refused; connection settings, credentials and names are preserved.
+    delete:
+      operationId: managementRemoveClusterRegistration
+      summary: Remove a cluster and leave surviving projects without a runtime.
       tags: [admin]
       security:
         - AdminJWTAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [telemetry_client_id]
-              properties:
-                telemetry_client_id:
-                  type: string
-                  minLength: 1
       responses:
         "204":
-          description: Telemetry identity updated.
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
+          description: Surviving projects keep their original cluster and lose runtime access. To run on another cluster, create a project with a new ID. Deleting the old project releases its slug but does not transfer its templates or API keys.
         "409":
           $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
 
   /unstable/management/clusters/{clusterID}/projects:
     parameters:
@@ -8074,7 +7960,7 @@ paths:
     put:
       operationId: managementRequestClusterDeletion
       summary: Record that a cluster is being deleted.
-      description: Records that the caller is deleting the cluster, for a caller that deletes the cluster's teams before the cluster itself. Refused while the cluster has deletion protection turned on; a protection change in flight commits before or after the check, never between. Once recorded, deletion protection cannot be turned on, so the cluster delete that follows is not refused for protection, and no team can be newly assigned to the cluster. An assignment either commits before the deletion is recorded, where the caller's next project listing finds it, or is refused with cluster_assignment_cluster_deleting. Succeeds when the cluster is absent. Repeating the request succeeds. The local cluster's nil ID is rejected.
+      description: Records that the caller is deleting the cluster, for a caller that deletes the cluster's teams before the cluster itself. Refused while the cluster has deletion protection turned on; a protection change in flight commits before or after the check, never between. Once recorded, deletion protection cannot be turned on, so the cluster delete that follows is not refused for protection, and no team can be newly assigned to the cluster. An assignment either commits before this request returns, where the caller's next project listing finds it, or is refused with a conflict. Succeeds when the cluster is absent. Repeating the request succeeds. The local cluster's nil ID is rejected.
       tags: [admin]
       security:
         - AdminJWTAuth: []
@@ -8114,7 +8000,7 @@ paths:
         "401":
           $ref: "#/components/responses/401"
         "409":
-          description: The cluster has deletion protection turned on, or more than one team uses it and the other teams and their templates must move off it before destroying the cluster.
+          description: The cluster has deletion protection turned on, or more than one team still uses it.
           content:
             application/json:
               schema:
@@ -8123,59 +8009,6 @@ paths:
           $ref: "#/components/responses/500"
         "503":
           $ref: "#/components/responses/503"
-
-  /unstable/management/projects/{projectID}/cluster/{clusterID}:
-    parameters:
-      - name: projectID
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - $ref: "#/components/parameters/clusterID"
-    put:
-      operationId: managementAssignProjectCluster
-      summary: Assign a cluster to a project.
-      description: >-
-        Assigns the cluster when the project has no cluster assigned. Replaying the identical
-        assignment succeeds; replacing a different assigned cluster returns a conflict.
-        Answers 404 when the project is missing or deleted.
-      tags: [admin]
-      security:
-        - AdminJWTAuth: []
-      responses:
-        "204":
-          description: Cluster is assigned to the project.
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
-    delete:
-      operationId: managementDetachProjectCluster
-      summary: Detach a cluster assignment from a project.
-      description: Answers 404 when the project is missing or deleted.
-      tags: [admin]
-      security:
-        - AdminJWTAuth: []
-      responses:
-        "204":
-          description: The matching assignment is absent.
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
 
   /unstable/management/projects/{projectID}:
     parameters:
@@ -8221,7 +8054,14 @@ paths:
         "500":
           $ref: "#/components/responses/500"
         "503":
-          $ref: "#/components/responses/503"
+          description: Cluster admission is unavailable. The project upsert can be retried.
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       operationId: managementDeleteProject
       summary: Soft-delete a project.
@@ -8236,13 +8076,14 @@ paths:
         204 and repeats every step except the deletion time: it re-blocks and
         re-scrubs the project, clears a cluster assignment written since,
         deletes any memberships, keys, templates or snapshots created since,
-        and enqueues the teardown again.
+        and enqueues the teardown again. When webhooks are configured, the
+        deletion transaction also queues retirement of the project's subscriptions.
       tags: [admin]
       security:
         - AdminJWTAuth: []
       responses:
         "204":
-          description: Project is deleted and its teardown is enqueued.
+          description: Project is deleted and cleanup is durably queued. Webhook retirement may still be pending.
         "400":
           $ref: "#/components/responses/400"
         "401":
@@ -8653,250 +8494,27 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /unstable/admin/clusters:
+  /unstable/admin/clusters/team-counts:
     get:
-      operationId: adminListClusters
-      summary: List clusters as admin
-      description: Lists the registered clusters with the number of teams assigned to each. Never returns a cluster's token. The local cluster is not a registered cluster and is not listed.
+      operationId: adminListClusterTeamCounts
+      summary: Count each cluster's teams as admin
+      description: Returns the number of live teams assigned to each remote cluster. A cluster no live team is assigned to is absent. It reads only the teams, so it answers without a cluster service.
       tags: [admin]
       security:
         - AdminApiKeyAuth: []
         - AdminJWTAuth: []
-      parameters:
-        - name: limit
-          in: query
-          required: false
-          description: Maximum number of clusters to return
-          schema:
-            type: integer
-            format: int32
-            minimum: 1
-            maximum: 100
-            default: 50
-        - name: offset
-          in: query
-          required: false
-          description: Number of matching clusters to skip
-          schema:
-            type: integer
-            format: int32
-            minimum: 0
-            default: 0
-        - name: search
-          in: query
-          required: false
-          description: Case-insensitive substring match on the cluster name or endpoint
-          schema:
-            type: string
-        - name: sortBy
-          in: query
-          required: false
-          description: Column to order by
-          schema:
-            type: string
-            enum:
-              - endpoint
-              - name
-              - teamCount
-            default: endpoint
-        - name: sortOrder
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - asc
-              - desc
-            default: asc
-            x-enum-varnames:
-              - AdminListClustersSortOrderAsc
-              - AdminListClustersSortOrderDesc
       responses:
         "200":
-          description: The page of matching clusters and the number of all matching clusters
+          description: The team count of every cluster a live team is assigned to
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClusterListResponse"
-        "400":
-          $ref: "#/components/responses/400"
+                $ref: "#/components/schemas/ClusterTeamCountList"
         "401":
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
-    post:
-      operationId: adminCreateCluster
-      summary: Create a cluster as admin
-      description: Creates a cluster whose configuration cannot be modified through this route. A new cluster starts with deletion protection turned on. Creating a cluster again with the same `cluster_id` and an identical configuration answers 201 with the stored cluster, whose deletionProtection is whatever is stored; a different configuration, or an auth organization another cluster uses, returns 409 with error_code cluster_registration_conflict. An invalid request returns 400 with error_code cluster_registration_invalid.
-      tags: [admin]
-      security:
-        - AdminApiKeyAuth: []
-        - AdminJWTAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdminClusterCreateRequest"
-      responses:
-        "201":
-          description: Cluster created.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ClusterDetail"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
 
-  /unstable/admin/clusters/{clusterID}:
-    parameters:
-      - $ref: "#/components/parameters/clusterID"
-    get:
-      operationId: adminGetCluster
-      summary: Cluster as admin
-      description: Returns a cluster with the first page of its assigned teams, the number of teams assigned to it and the number of live templates on it. Never returns the cluster's token.
-      tags: [admin]
-      security:
-        - AdminApiKeyAuth: []
-        - AdminJWTAuth: []
-      parameters:
-        - name: teamsLimit
-          in: query
-          required: false
-          description: Page size for the embedded teams page
-          schema:
-            type: integer
-            format: int32
-            minimum: 1
-            maximum: 100
-            default: 50
-        - name: teamsOffset
-          in: query
-          required: false
-          description: Offset for the embedded teams page
-          schema:
-            type: integer
-            format: int32
-            minimum: 0
-            default: 0
-      responses:
-        "200":
-          description: The cluster
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ClusterDetailWithTeams"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
-    patch:
-      operationId: adminUpdateCluster
-      summary: Update a cluster as admin
-      description: >-
-        Writes only the properties present in the body. `endpoint` and
-        `endpointTls` change where orchestration traffic for every team on the
-        cluster goes, `sandboxProxyDomain` changes the public URL of every
-        sandbox on it, and `authOrgId` changes how the cluster authenticates.
-        A body with no property returns 400. Another cluster using the auth organization
-        returns 409, and so does turning deletion protection on after the
-        cluster's deletion is recorded. The token is rotated through
-        `PUT /unstable/admin/clusters/{clusterID}/token`.
-      tags: [admin]
-      security:
-        - AdminApiKeyAuth: []
-        - AdminJWTAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ClusterUpdateRequest"
-      responses:
-        "200":
-          description: The cluster as updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ClusterDetail"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
-    delete:
-      operationId: adminDeleteCluster
-      summary: Delete a cluster and its environments as admin
-      description: Deletes a cluster after all team assignments are detached. Deletion protection on the cluster rejects the deletion, and so does a live team assignment, before anything changes. In one transaction it then soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history, and afterwards the cluster service deletes the cluster. A team assigned between those two steps returns a conflict with the templates already deleted; repeating the deletion once that team is detached completes it. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
-      tags: [admin]
-      security:
-        - AdminApiKeyAuth: []
-        - AdminJWTAuth: []
-      responses:
-        "204":
-          description: Cluster deleted or already absent.
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
-
-  /unstable/admin/clusters/{clusterID}/metadata:
-    parameters:
-      - $ref: "#/components/parameters/clusterID"
-    get:
-      operationId: adminGetClusterMetadata
-      summary: Cluster metadata as admin
-      description: Returns cluster metadata without reading assigned teams or counting teams and templates. Never returns the cluster's token.
-      tags: [admin]
-      security:
-        - AdminApiKeyAuth: []
-        - AdminJWTAuth: []
-      responses:
-        "200":
-          description: Cluster metadata
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ClusterDetail"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
   /unstable/admin/clusters/{clusterID}/teams:
     parameters:
       - $ref: "#/components/parameters/clusterID"
@@ -8938,6 +8556,9 @@ paths:
               - createdAt
               - name
             default: createdAt
+            x-enum-varnames:
+              - AdminListClusterTeamsParamsSortByCreatedAt
+              - AdminListClusterTeamsParamsSortByName
         - name: sortOrder
           in: query
           required: false
@@ -8957,37 +8578,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ClusterTeamListResponse"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "404":
-          $ref: "#/components/responses/404"
-        "500":
-          $ref: "#/components/responses/500"
-        "503":
-          $ref: "#/components/responses/503"
-
-  /unstable/admin/clusters/{clusterID}/token:
-    parameters:
-      - $ref: "#/components/parameters/clusterID"
-    put:
-      operationId: adminRotateClusterToken
-      summary: Rotate a cluster's token as admin
-      description: Replaces the token used to reach the cluster. The previous token stops working at once. No route returns a cluster's token.
-      tags: [admin]
-      security:
-        - AdminApiKeyAuth: []
-        - AdminJWTAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ClusterTokenRotateRequest"
-      responses:
-        "204":
-          description: Token rotated.
         "400":
           $ref: "#/components/responses/400"
         "401":
@@ -9504,7 +9094,11 @@ paths:
 
     post:
       summary: Create a secret
-      description: Create a secret by storing a runtime marker as its first version. The response carries metadata only.
+      description: >-
+        Create a secret by storing a runtime marker as its first version. The
+        response carries metadata only. The value is not part of the
+        Idempotency-Key comparison: reusing a key with a different value
+        replays the first result.
       tags: [secrets]
       security:
         - ApiKeyAuth: []
@@ -9514,6 +9108,8 @@ paths:
           AdminTeamAuth: []
         - AdminJWTAuth: []
           AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/idempotencyKey"
       requestBody:
         required: true
         content:
@@ -9528,18 +9124,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/Secret"
         "400":
-          $ref: "#/components/responses/400"
+          description: Invalid request or value too large
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/401"
         "403":
-          $ref: "#/components/responses/403"
+          description: Forbidden, blocked team, or secrets unavailable
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
-          $ref: "#/components/responses/404"
+          description: Backend secret not found; creation may have partially committed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "409":
           description: >-
             Secret name conflict or project live-secret limit reached. A quota
             response has error_code secret_limit_reached and, when reported by
-            the backend, the effective cap in message.
+            the backend, the effective cap in message. With an Idempotency-Key,
+            also returned when the key conflicts with a different request
+            (error_code idempotency_request_mismatch), or the matching original
+            request has no recorded response yet and is within its expected
+            response window (error_code idempotency_in_progress); this request
+            was not executed again.
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
           content:
             application/json:
               schema:
@@ -9550,14 +9172,59 @@ paths:
                     code: 409
                     message: Project has reached its limit of 50 live secrets
                     error_code: secret_limit_reached
+        "413":
+          description: Request body exceeds the size limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: The matching original request has no recorded response and its expected response deadline has passed or is unknown (error_code idempotency_outcome_unknown); this request was not executed again
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "429":
           $ref: "#/components/responses/429"
         "500":
-          $ref: "#/components/responses/500"
+          description: Server error
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "502":
-          $ref: "#/components/responses/502"
+          description: Backend error
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: With an Idempotency-Key, the request result is unavailable because the idempotency record could not be reserved or read, or idempotency is misconfigured; this request was not executed. Should-Retry true means a retry with the same Idempotency-Key may succeed; false means configuration must be corrected.
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "504":
-          $ref: "#/components/responses/504"
+          description: Deadline exceeded
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /secrets/{secretID}:
     get:
@@ -10038,8 +9705,12 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
     get:
       description: List registered webhooks.
       tags: [webhooks]
@@ -10127,8 +9798,12 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
     delete:
       description: Delete a registered webhook.
@@ -10150,8 +9825,12 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /events/webhooks/{webhookID}/deliveries:
     get:

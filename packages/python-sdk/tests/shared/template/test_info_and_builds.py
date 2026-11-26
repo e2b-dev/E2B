@@ -64,6 +64,7 @@ BUILDS = [
         "cpuCount": 2,
         "maxCpuCount": 4,
         "memoryMB": 1024,
+        "maxMemoryMB": 3072,
         "diskSizeMB": 5120,
         "envdVersion": "0.2.0",
         "createdAt": "2024-01-16T10:30:00Z",
@@ -199,6 +200,7 @@ READY_BUILD: Dict[str, Any] = dict(
     cpu_count=2,
     max_cpu_count=4,
     memory_mb=1024,
+    max_memory_mb=3072,
     disk_size_mb=5120,
     envd_version="0.2.0",
     created_at=datetime(2024, 1, 16, 10, 30, tzinfo=timezone.utc),
@@ -462,3 +464,23 @@ async def test_rejects_name_before_any_api_key_is_needed(
 
     with pytest.raises(InvalidArgumentException):
         await call(template_cls, "acme/web:v2")
+
+
+def test_build_info_keeps_the_positional_order_it_was_released_with():
+    created = datetime(2024, 1, 16, 10, 30, tzinfo=timezone.utc)
+    build = TemplateBuildInfo(
+        "b1",
+        TemplateBuildStatus.READY,
+        2,
+        1024,
+        created,
+        created,
+        None,
+        4,
+        5120,
+        "0.2.0",
+    )
+
+    assert build.disk_size_mb == 5120
+    assert build.envd_version == "0.2.0"
+    assert build.max_memory_mb is None

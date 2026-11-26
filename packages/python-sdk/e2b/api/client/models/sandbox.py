@@ -21,6 +21,8 @@ class Sandbox:
         envd_access_token (Union[Unset, str]): Access token used for envd communication
         traffic_access_token (Union[None, Unset, str]): Token required for accessing sandbox via proxy.
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
+        cpu_count (Union[Unset, int]): CPU cores for the sandbox
+        memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
     """
 
     template_id: str
@@ -31,6 +33,8 @@ class Sandbox:
     envd_access_token: Union[Unset, str] = UNSET
     traffic_access_token: Union[None, Unset, str] = UNSET
     domain: Union[None, Unset, str] = UNSET
+    cpu_count: Union[Unset, int] = UNSET
+    memory_mb: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -58,6 +62,10 @@ class Sandbox:
         else:
             domain = self.domain
 
+        cpu_count = self.cpu_count
+
+        memory_mb = self.memory_mb
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -76,6 +84,10 @@ class Sandbox:
             field_dict["trafficAccessToken"] = traffic_access_token
         if domain is not UNSET:
             field_dict["domain"] = domain
+        if cpu_count is not UNSET:
+            field_dict["cpuCount"] = cpu_count
+        if memory_mb is not UNSET:
+            field_dict["memoryMB"] = memory_mb
 
         return field_dict
 
@@ -114,6 +126,10 @@ class Sandbox:
 
         domain = _parse_domain(d.pop("domain", UNSET))
 
+        cpu_count = d.pop("cpuCount", UNSET)
+
+        memory_mb = d.pop("memoryMB", UNSET)
+
         sandbox = cls(
             template_id=template_id,
             sandbox_id=sandbox_id,
@@ -123,6 +139,8 @@ class Sandbox:
             envd_access_token=envd_access_token,
             traffic_access_token=traffic_access_token,
             domain=domain,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
         )
 
         sandbox.additional_properties = d

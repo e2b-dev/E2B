@@ -116,7 +116,7 @@ class TemplateInfo:
     """Number of CPUs allocated to the sandbox."""
 
     memory_mb: int
-    """Amount of memory in MiB allocated to the sandbox."""
+    """Amount of memory in MiB a sandbox created from the template starts with."""
 
     disk_size_mb: int
     """Disk size in MiB of the sandbox."""
@@ -144,6 +144,9 @@ class TemplateInfo:
 
     max_cpu_count: Optional[int] = None
     """Maximum number of CPUs a sandbox can be started with. Set only for resizable templates."""
+
+    max_memory_mb: Optional[int] = None
+    """Memory in MiB a sandbox can be started with at most. Set only for templates whose memory is resizable."""
 
     @classmethod
     def _from_model(cls, template: TemplateModel) -> "TemplateInfo":
@@ -175,6 +178,11 @@ class TemplateInfo:
                 if isinstance(template.max_cpu_count, Unset)
                 else template.max_cpu_count
             ),
+            max_memory_mb=(
+                None
+                if isinstance(template.max_memory_mb, Unset)
+                else template.max_memory_mb
+            ),
         )
 
 
@@ -194,7 +202,7 @@ class TemplateBuildInfo:
     """Number of CPUs a sandbox created from the build starts with."""
 
     memory_mb: int
-    """Amount of memory in MiB allocated to the sandbox."""
+    """Amount of memory in MiB a sandbox created from the build starts with."""
 
     created_at: datetime
     """When the build was created."""
@@ -207,6 +215,10 @@ class TemplateBuildInfo:
 
     max_cpu_count: Optional[int] = None
     """Maximum number of CPUs a sandbox can be started with. Set only for resizable builds."""
+
+    max_memory_mb: Optional[int] = field(default=None, kw_only=True)
+    """Memory in MiB a sandbox can be started with at most. Set only for builds whose memory is resizable.
+    Keyword-only, so the positional order of the fields after it is unchanged."""
 
     disk_size_mb: Optional[int] = None
     """Disk size in MiB of the sandbox."""
@@ -232,6 +244,9 @@ class TemplateBuildInfo:
             ),
             max_cpu_count=(
                 None if isinstance(build.max_cpu_count, Unset) else build.max_cpu_count
+            ),
+            max_memory_mb=(
+                None if isinstance(build.max_memory_mb, Unset) else build.max_memory_mb
             ),
             disk_size_mb=(
                 None if isinstance(build.disk_size_mb, Unset) else build.disk_size_mb
