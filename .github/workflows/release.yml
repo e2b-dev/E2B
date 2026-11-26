@@ -244,6 +244,7 @@ jobs:
     needs: [preflight]
     if: needs.preflight.outputs.acp_js == 'true'
     uses: ./.github/workflows/acp_js_tests.yml
+    secrets: inherit
 
   acp-python-tests:
     name: ACP Python SDK Tests

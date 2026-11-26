@@ -158,6 +158,8 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.acp_js == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/acp_js_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   acp-python-tests:
     name: Production / ACP Python SDK Tests
