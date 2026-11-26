@@ -8,14 +8,17 @@ from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.template_build_request_v3 import TemplateBuildRequestV3
 from ...models.template_request_response_v3 import TemplateRequestResponseV3
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
     body: TemplateBuildRequestV3,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(idempotency_key, Unset):
+        headers["Idempotency-Key"] = idempotency_key
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -53,6 +56,10 @@ def _parse_response(
         response_409 = Error.from_dict(response.json())
 
         return response_409
+    if response.status_code == 422:
+        response_422 = Error.from_dict(response.json())
+
+        return response_422
     if response.status_code == 429:
         response_429 = Error.from_dict(response.json())
 
@@ -61,6 +68,10 @@ def _parse_response(
         response_500 = Error.from_dict(response.json())
 
         return response_500
+    if response.status_code == 503:
+        response_503 = Error.from_dict(response.json())
+
+        return response_503
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -82,12 +93,14 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, TemplateRequestResponseV3]]:
     """Create template (v3)
 
-     Create a new template
+     Create a new template.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (TemplateBuildRequestV3):
 
     Raises:
@@ -100,6 +113,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = client.get_httpx_client().request(
@@ -113,12 +127,14 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, TemplateRequestResponseV3]]:
     """Create template (v3)
 
-     Create a new template
+     Create a new template.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (TemplateBuildRequestV3):
 
     Raises:
@@ -132,6 +148,7 @@ def sync(
     return sync_detailed(
         client=client,
         body=body,
+        idempotency_key=idempotency_key,
     ).parsed
 
 
@@ -139,12 +156,14 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, TemplateRequestResponseV3]]:
     """Create template (v3)
 
-     Create a new template
+     Create a new template.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (TemplateBuildRequestV3):
 
     Raises:
@@ -157,6 +176,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -168,12 +188,14 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, TemplateRequestResponseV3]]:
     """Create template (v3)
 
-     Create a new template
+     Create a new template.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (TemplateBuildRequestV3):
 
     Raises:
@@ -188,5 +210,6 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             body=body,
+            idempotency_key=idempotency_key,
         )
     ).parsed

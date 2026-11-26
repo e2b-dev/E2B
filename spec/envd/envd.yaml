@@ -122,6 +122,24 @@ paths:
               schema:
                 type: integer
                 minimum: 0
+            X-Envd-Memory:
+              description: >-
+                JSON report of guest memory, on every response. The top-level request, low,
+                floor and partial fields are the memory protection on envd's cgroup chain.
+                A 204 also carries limit (mem_total: the guest memory in bytes the applied
+                limit was computed from; applied: the memory.max and memory.high envd last
+                wrote to the user and PTY cgroups; pending: true when applied is not computed
+                from the guest memory envd last observed, or the last recompute failed;
+                error: that failure, truncated) and, once envd has read it, layout (policy:
+                memory_hotplug.online_policy; auto_online: auto_online_blocks; movable and
+                kernel: bytes managed in ZONE_MOVABLE and in the other zones). The report is
+                envd's last recompute, run on memory events, on every /init (this call's
+                recompute is not waited on) and every 30 seconds, so it can lag a change by
+                one of those; after resizing guest memory the host calls /init once more and
+                compares mem_total with the memory it plugged. Fields a reader does not know
+                are to be ignored.
+              schema:
+                type: string
             X-Envd-Init-Unobserved:
               description: >-
                 How many /init handlers ran their thaw and finished with their request
@@ -603,6 +621,28 @@ components:
         mem_cache:
           type: integer
           description: Cached memory (page cache) in bytes
+        mem_limit:
+          type: integer
+          format: int64
+          description: >-
+            Memory limit envd last applied to the user and PTY cgroups in bytes,
+            recomputed whenever the guest's memory size changes; 0 when envd has
+            applied none. A limit changed from inside the guest is not reflected.
+        mem_movable:
+          type: integer
+          format: int64
+          description: >-
+            Memory managed in the guest's movable zone in bytes, the part a later
+            memory unplug can reliably take back.
+        mem_kernel:
+          type: integer
+          format: int64
+          description: Memory managed in the guest's other zones in bytes
+        mem_online_policy:
+          type: string
+          description: >-
+            The guest kernel's memory_hotplug.online_policy, empty when the kernel
+            has no such parameter.
         disk_used:
           type: integer
           description: Used disk space in bytes

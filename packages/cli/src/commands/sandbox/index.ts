@@ -12,6 +12,7 @@ import { metricsCommand } from './metrics'
 import { execCommand } from './exec'
 import { snapshotCommand } from './snapshot'
 import { forkCommand } from './fork'
+import { portForwardCommand } from './port_forward'
 
 export const sandboxCommand = new commander.Command('sandbox')
   .description('work with sandboxes')
@@ -30,3 +31,4 @@ export const sandboxCommand = new commander.Command('sandbox')
   .addCommand(execCommand)
   .addCommand(snapshotCommand)
   .addCommand(forkCommand)
+  .addCommand(portForwardCommand)

@@ -21,6 +21,7 @@ export {
   SandboxNotRunningError,
   SandboxUnreachableError,
   TemplateError,
+  TemplateNotFoundError,
   TimeoutError,
   RateLimitError,
   ServiceBusyError,

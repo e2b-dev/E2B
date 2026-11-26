@@ -1,0 +1,157 @@
+import datetime
+from collections.abc import Mapping
+from typing import Any, TypeVar, Union, cast
+from uuid import UUID
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+from dateutil.parser import isoparse
+
+from ..models.template_build_status import TemplateBuildStatus
+from ..types import UNSET, Unset
+
+T = TypeVar("T", bound="TemplateBuildWithTags")
+
+
+@_attrs_define
+class TemplateBuildWithTags:
+    """
+    Attributes:
+        build_id (UUID): Identifier of the build
+        status (TemplateBuildStatus): Status of the template build
+        created_at (datetime.datetime): Time when the build was created
+        updated_at (datetime.datetime): Time when the build was last updated
+        cpu_count (int): CPU cores for the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
+        tags (list[str]): Tags of the template that point at this build. A tag points at the latest ready build it was
+            assigned to, the build a sandbox created with that tag starts from.
+        finished_at (Union[Unset, datetime.datetime]): Time when the build was finished
+        max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
+        disk_size_mb (Union[Unset, int]): Disk size for the sandbox in MiB
+        envd_version (Union[Unset, str]): Version of the envd running in the sandbox
+    """
+
+    build_id: UUID
+    status: TemplateBuildStatus
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    cpu_count: int
+    memory_mb: int
+    tags: list[str]
+    finished_at: Union[Unset, datetime.datetime] = UNSET
+    max_cpu_count: Union[Unset, int] = UNSET
+    disk_size_mb: Union[Unset, int] = UNSET
+    envd_version: Union[Unset, str] = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        build_id = str(self.build_id)
+
+        status = self.status.value
+
+        created_at = self.created_at.isoformat()
+
+        updated_at = self.updated_at.isoformat()
+
+        cpu_count = self.cpu_count
+
+        memory_mb = self.memory_mb
+
+        tags = self.tags
+
+        finished_at: Union[Unset, str] = UNSET
+        if not isinstance(self.finished_at, Unset):
+            finished_at = self.finished_at.isoformat()
+
+        max_cpu_count = self.max_cpu_count
+
+        disk_size_mb = self.disk_size_mb
+
+        envd_version = self.envd_version
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update(
+            {
+                "buildID": build_id,
+                "status": status,
+                "createdAt": created_at,
+                "updatedAt": updated_at,
+                "cpuCount": cpu_count,
+                "memoryMB": memory_mb,
+                "tags": tags,
+            }
+        )
+        if finished_at is not UNSET:
+            field_dict["finishedAt"] = finished_at
+        if max_cpu_count is not UNSET:
+            field_dict["maxCpuCount"] = max_cpu_count
+        if disk_size_mb is not UNSET:
+            field_dict["diskSizeMB"] = disk_size_mb
+        if envd_version is not UNSET:
+            field_dict["envdVersion"] = envd_version
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        build_id = UUID(d.pop("buildID"))
+
+        status = TemplateBuildStatus(d.pop("status"))
+
+        created_at = isoparse(d.pop("createdAt"))
+
+        updated_at = isoparse(d.pop("updatedAt"))
+
+        cpu_count = d.pop("cpuCount")
+
+        memory_mb = d.pop("memoryMB")
+
+        tags = cast(list[str], d.pop("tags"))
+
+        _finished_at = d.pop("finishedAt", UNSET)
+        finished_at: Union[Unset, datetime.datetime]
+        if isinstance(_finished_at, Unset):
+            finished_at = UNSET
+        else:
+            finished_at = isoparse(_finished_at)
+
+        max_cpu_count = d.pop("maxCpuCount", UNSET)
+
+        disk_size_mb = d.pop("diskSizeMB", UNSET)
+
+        envd_version = d.pop("envdVersion", UNSET)
+
+        template_build_with_tags = cls(
+            build_id=build_id,
+            status=status,
+            created_at=created_at,
+            updated_at=updated_at,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
+            tags=tags,
+            finished_at=finished_at,
+            max_cpu_count=max_cpu_count,
+            disk_size_mb=disk_size_mb,
+            envd_version=envd_version,
+        )
+
+        template_build_with_tags.additional_properties = d
+        return template_build_with_tags
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties
