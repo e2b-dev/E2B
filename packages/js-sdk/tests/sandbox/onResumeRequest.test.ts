@@ -137,10 +137,10 @@ test('an onResume object with only memoryMB sends memoryMB alone', async () => {
   expect(lastConnectBody).not.toHaveProperty('onResume')
 })
 
-test("an onResume object with mode 'reboot' sends flat fields", async () => {
+test("an onResume object with action 'reboot' sends flat fields", async () => {
   await Sandbox.connect('test-sandbox-id', {
     apiKey: TEST_API_KEY,
-    onResume: { mode: 'reboot', memoryMB: 4096, cpuCount: 4 },
+    onResume: { action: 'reboot', memoryMB: 4096, cpuCount: 4 },
   })
 
   expect(lastConnectBody).toMatchObject({
@@ -176,15 +176,15 @@ test('an empty onResume object sends none of the resume fields', async () => {
 })
 
 const invalidObjects = [
-  { mode: 'Reboot' },
-  { mode: 'rebooted' },
+  { action: 'Reboot' },
+  { action: 'rebooted' },
   { memoryMB: '4096' },
   { memoryMB: 0 },
   { memoryMB: 1024.5 },
   { cpuCount: -1 },
   { cpuCount: '4' },
   { memoryMb: 4096 },
-  { mode: 'reboot', cpus: 4 },
+  { action: 'reboot', cpus: 4 },
 ]
 
 test.for(invalidObjects)(

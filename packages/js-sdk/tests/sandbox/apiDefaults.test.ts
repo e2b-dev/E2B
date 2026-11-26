@@ -263,10 +263,10 @@ test.each([
   ['reboot', false],
 ] as const)(
   'Sandbox.connect sends onResume sizes as flat fields on %s',
-  async (mode, memory) => {
+  async (action, memory) => {
     await Sandbox.connect('test-sandbox-id', {
       apiKey: TEST_API_KEY,
-      onResume: { mode, memoryMB: 4096, cpuCount: 4 },
+      onResume: { action, memoryMB: 4096, cpuCount: 4 },
     })
 
     expect(lastConnectBody?.memoryMB).toBe(4096)

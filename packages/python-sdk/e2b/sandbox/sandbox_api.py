@@ -797,11 +797,11 @@ class SandboxOnResumeOptions(TypedDict, total=False):
     How to bring a paused sandbox back, with the sizes to resume it at.
 
     Everything here applies only when the connect resumes a paused sandbox, by
-    a restore or a reboot. A sandbox that is already running keeps its mode and
-    sizes and these values are ignored. For a paused sandbox, a size its
-    template or the team cannot take is refused by the API; a size it can take
-    is ignored when another request is already resuming the sandbox. Read the
-    sizes the sandbox runs with from ``get_info()``.
+    a restore or a reboot. A sandbox that is already running keeps its sizes
+    and these values are ignored. For a paused sandbox, a size its template or
+    the team cannot take is refused by the API; a size it can take is ignored
+    when another request is already resuming the sandbox. Read the sizes the
+    sandbox runs with from ``get_info()``.
 
     The sizes need a control plane that knows them: E2B Cloud, or a self-hosted
     or BYOC deployment built from ``e2b-dev/runtime`` at or after the commit
@@ -809,7 +809,7 @@ class SandboxOnResumeOptions(TypedDict, total=False):
     control plane drops them and resumes at the paused sizes with no error.
     """
 
-    mode: SandboxOnResume
+    action: SandboxOnResume
     """``"restore"`` (the default) restores the memory snapshot; ``"reboot"`` cold-boots from disk state, so writes not flushed before the pause may be lost."""
 
     memory_mb: int
@@ -830,7 +830,7 @@ class ConnectResume(NamedTuple):
 def resolve_connect_resume(
     on_resume: Union[None, "SandboxOnResume", SandboxOnResumeOptions],
 ) -> ConnectResume:
-    """Resolve ``on_resume`` into the flat connect fields: the mode into
+    """Resolve ``on_resume`` into the flat connect fields: the action into
     ``memory`` (``"restore"`` is the API's default, so it travels as an omitted
     field) and the sizes into ``memory_mb`` and ``cpu_count``."""
     if on_resume is None:
@@ -841,15 +841,15 @@ def resolve_connect_resume(
         raise InvalidArgumentException(
             f"on_resume must be one of: restore, reboot, or a dict (got {on_resume!r})."
         )
-    unknown = set(on_resume) - {"mode", "memory_mb", "cpu_count"}
+    unknown = set(on_resume) - {"action", "memory_mb", "cpu_count"}
     if unknown:
         raise InvalidArgumentException(
             f"on_resume has unknown keys: {', '.join(sorted(unknown))}."
         )
-    mode = on_resume.get("mode")
-    if mode is not None and mode not in ("restore", "reboot"):
+    action = on_resume.get("action")
+    if action is not None and action not in ("restore", "reboot"):
         raise InvalidArgumentException(
-            f"on_resume['mode'] must be one of: restore, reboot (got {mode!r})."
+            f"on_resume['action'] must be one of: restore, reboot (got {action!r})."
         )
     sizes = {}
     for key in ("memory_mb", "cpu_count"):
@@ -862,7 +862,7 @@ def resolve_connect_resume(
             )
         sizes[key] = value if value is not None else UNSET
     return ConnectResume(
-        resolve_connect_memory(mode) if mode is not None else UNSET,
+        resolve_connect_memory(action) if action is not None else UNSET,
         sizes["memory_mb"],
         sizes["cpu_count"],
     )

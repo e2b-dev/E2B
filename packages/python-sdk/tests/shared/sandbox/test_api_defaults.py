@@ -424,12 +424,12 @@ async def test_async_connect_omits_resume_sizes_when_unset(monkeypatch, test_api
     assert "cpuCount" not in body
 
 
-@pytest.mark.parametrize("mode, memory", [("restore", None), ("reboot", False)])
-def test_connect_sends_on_resume_sizes_flat(monkeypatch, test_api_key, mode, memory):
+@pytest.mark.parametrize("action, memory", [("restore", None), ("reboot", False)])
+def test_connect_sends_on_resume_sizes_flat(monkeypatch, test_api_key, action, memory):
     body = _sync_connect_body(
         monkeypatch,
         test_api_key,
-        on_resume={"mode": mode, "memory_mb": 4096, "cpu_count": 4},
+        on_resume={"action": action, "memory_mb": 4096, "cpu_count": 4},
     )
 
     assert body["memoryMB"] == 4096
@@ -438,14 +438,14 @@ def test_connect_sends_on_resume_sizes_flat(monkeypatch, test_api_key, mode, mem
     assert "onResume" not in body
 
 
-@pytest.mark.parametrize("mode, memory", [("restore", None), ("reboot", False)])
+@pytest.mark.parametrize("action, memory", [("restore", None), ("reboot", False)])
 async def test_async_connect_sends_on_resume_sizes_flat(
-    monkeypatch, test_api_key, mode, memory
+    monkeypatch, test_api_key, action, memory
 ):
     body = await _async_connect_body(
         monkeypatch,
         test_api_key,
-        on_resume={"mode": mode, "memory_mb": 4096, "cpu_count": 4},
+        on_resume={"action": action, "memory_mb": 4096, "cpu_count": 4},
     )
 
     assert body["memoryMB"] == 4096

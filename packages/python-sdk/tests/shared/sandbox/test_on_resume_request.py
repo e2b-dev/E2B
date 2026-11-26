@@ -186,12 +186,12 @@ async def test_async_connect_rejects_an_unrecognized_on_resume(
 OBJECT_CASES = [
     pytest.param({"memory_mb": 2048}, {"memoryMB": 2048}, id="memory-only"),
     pytest.param(
-        {"mode": "reboot", "memory_mb": 4096, "cpu_count": 4},
+        {"action": "reboot", "memory_mb": 4096, "cpu_count": 4},
         {"memory": False, "memoryMB": 4096, "cpuCount": 4},
         id="reboot-with-sizes",
     ),
     pytest.param({"cpu_count": 2}, {"cpuCount": 2}, id="cpu-only"),
-    pytest.param({"mode": "restore"}, {}, id="restore-object"),
+    pytest.param({"action": "restore"}, {}, id="restore-object"),
     pytest.param({}, {}, id="empty-object"),
 ]
 
@@ -227,7 +227,7 @@ def test_reboot_string_sends_only_memory_false(monkeypatch, test_api_key):
 
 
 INVALID_OBJECTS = [
-    pytest.param({"mode": "Reboot"}, id="bad-mode"),
+    pytest.param({"action": "Reboot"}, id="bad-action"),
     pytest.param({"memory_mb": "4096"}, id="memory-str"),
     pytest.param({"memory_mb": 0}, id="memory-zero"),
     pytest.param({"memory_mb": True}, id="memory-bool"),
