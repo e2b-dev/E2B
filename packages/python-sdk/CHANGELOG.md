@@ -1,5 +1,15 @@
 # @e2b/python-sdk
 
+## 2.65.0
+
+### Minor Changes
+
+- 08c4eeb: Add `Template.getInfo(nameOrId)` (`get_info` in Python), which returns a template with its default build as `TemplateDetail`, and `Template.listBuilds(nameOrId, { statuses, tags })` (`list_builds` in Python), which returns a `TemplateBuildPaginator` (`AsyncTemplateBuildPaginator` for `AsyncTemplate`) over the template's builds, newest first. Each build carries its `cpuCount`, `maxCpuCount` and the tags that point at it, so `Template.listBuilds('my-template', { tags: ['v2'] })` reads the build a tag points at. `getInfo` and fetching a page of builds throw the new `TemplateNotFoundError` (`TemplateNotFoundException` in Python), a subclass of `TemplateError`, when the template is not found. Both methods take a name or ID without a tag and throw `InvalidArgumentError` (`InvalidArgumentException` in Python) for `name:tag`.
+
+### Patch Changes
+
+- 6a729b0: Mark every `sandbox.git` method as deprecated; run git with `sandbox.commands.run()` instead.
+
 ## 2.64.0
 
 ### Minor Changes

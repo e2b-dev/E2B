@@ -1,6 +1,6 @@
 {
   "name": "@e2b/acp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "packageManager": "pnpm@10.34.5",
   "description": "Run Agent Client Protocol (ACP) agents in E2B sandboxes",
   "homepage": "https://e2b.dev/docs/agents/acp?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-acp",

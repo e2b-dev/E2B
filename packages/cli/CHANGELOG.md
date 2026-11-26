@@ -1,5 +1,21 @@
 # @e2b/cli
 
+## 2.25.0
+
+### Minor Changes
+
+- eafbb74: Add `e2b sandbox port-forward <sandboxID> <local:remote>` (alias `pf`), which forwards a local port to a port inside a running sandbox. The sandbox downloads a pinned, checksum-verified websocat binary, runs it as a WebSocket server in front of the remote port, and tunnels each local TCP connection over its own WebSocket. websocat only accepts connections on a random secret path generated per forward, so the relay is not reachable by anyone who only knows the sandbox ID. Works with sandboxes that restrict public traffic.
+
+### Patch Changes
+
+- ba66e82: Bump runtime dependencies: `glob` to ^14.0.6 and `tar` to ^7.5.23 (e2b), `jose` to ^6.2.17 (@e2b/cli)
+- aeb09d0: Bump runtime dependencies: `undici` to ^8.12.4 (security fixes), `glob` to ^14.0.4, `@bufbuild/protobuf` to ^2.17.0 (e2b) and `commander` / `@commander-js/extra-typings` to ~15.1.0 (@e2b/cli)
+- Updated dependencies [6a729b0]
+- Updated dependencies [ba66e82]
+- Updated dependencies [aeb09d0]
+- Updated dependencies [08c4eeb]
+  - e2b@2.65.0
+
 ## 2.24.0
 
 ### Minor Changes
