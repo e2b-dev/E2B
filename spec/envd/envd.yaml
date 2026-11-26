@@ -99,6 +99,17 @@ paths:
                     after the call, such as one that records which pages the resume touches. A
                     value this envd does not know reads as inline, the side on which a guest
                     is never left frozen.
+                exposeLocalhostPorts:
+                  type: boolean
+                  x-go-type-skip-optional-pointer: false
+                  description: >-
+                    Whether services listening only on loopback (127.0.0.1, localhost, ::1)
+                    are forwarded onto the sandbox's network interface, making them reachable
+                    through sandbox URLs. false kills every running forward and forwards
+                    nothing new; true forwards again from the next port scan. Absent keeps the
+                    current setting. A freshly booted guest forwards nothing until its first
+                    /init, then forwards unless told otherwise; an envd that restarts in the same
+                    boot keeps the setting.
 
       responses:
         "204":

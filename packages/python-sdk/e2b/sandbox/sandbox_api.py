@@ -797,9 +797,16 @@ class SandboxOnResumeOptions(TypedDict, total=False):
     How to bring a paused sandbox back, with the sizes to resume it at.
 
     Everything here applies only when the connect resumes a paused sandbox, by
-    a restore or a reboot. A sandbox that is already running, or that another
-    request is already resuming, keeps its mode and sizes and these values are
-    ignored. Read the sizes the sandbox runs with from ``get_info()``.
+    a restore or a reboot. A sandbox that is already running keeps its mode and
+    sizes and these values are ignored. For a paused sandbox, a size its
+    template or the team cannot take is refused by the API; a size it can take
+    is ignored when another request is already resuming the sandbox. Read the
+    sizes the sandbox runs with from ``get_info()``.
+
+    The sizes need a control plane that knows them: E2B Cloud, or a self-hosted
+    or BYOC deployment built from ``e2b-dev/runtime`` at or after the commit
+    that added ``memoryMB`` and ``cpuCount`` to connect (2026-11-25). An older
+    control plane drops them and resumes at the paused sizes with no error.
     """
 
     mode: SandboxOnResume

@@ -295,10 +295,13 @@ class Sandbox(SandboxApi):
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
             Pass a ``SandboxOnResumeOptions`` dict (``mode``, ``memory_mb``, ``cpu_count``) to also
-            choose the memory and CPUs it resumes with. The sizes apply only when this call resumes a
-            paused sandbox: a sandbox that is already running, or that another request is already
-            resuming, keeps its sizes and they are ignored. Read them back with ``get_info()``. An
-            unknown mode or a size that is not a positive integer raises `InvalidArgumentException`.
+            choose the memory and CPUs it resumes with. A sandbox that is already running keeps its
+            sizes and they are ignored. For a paused sandbox, a size its template or the team cannot
+            take is refused by the API; a size it can take is ignored when another request is already
+            resuming the sandbox. Read them back with ``get_info()``. The sizes need a control plane
+            built from `e2b-dev/runtime` at or after 2026-11-25; an older one drops them and resumes
+            at the paused sizes with no error. An unknown mode or key, or a size that is not a
+            positive integer, raises `InvalidArgumentException`.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -344,10 +347,13 @@ class Sandbox(SandboxApi):
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
             Pass a ``SandboxOnResumeOptions`` dict (``mode``, ``memory_mb``, ``cpu_count``) to also
-            choose the memory and CPUs it resumes with. The sizes apply only when this call resumes a
-            paused sandbox: a sandbox that is already running, or that another request is already
-            resuming, keeps its sizes and they are ignored. Read them back with ``get_info()``. An
-            unknown mode or a size that is not a positive integer raises `InvalidArgumentException`.
+            choose the memory and CPUs it resumes with. A sandbox that is already running keeps its
+            sizes and they are ignored. For a paused sandbox, a size its template or the team cannot
+            take is refused by the API; a size it can take is ignored when another request is already
+            resuming the sandbox. Read them back with ``get_info()``. The sizes need a control plane
+            built from `e2b-dev/runtime` at or after 2026-11-25; an older one drops them and resumes
+            at the paused sizes with no error. An unknown mode or key, or a size that is not a
+            positive integer, raises `InvalidArgumentException`.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -388,10 +394,13 @@ class Sandbox(SandboxApi):
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
             Pass a ``SandboxOnResumeOptions`` dict (``mode``, ``memory_mb``, ``cpu_count``) to also
-            choose the memory and CPUs it resumes with. The sizes apply only when this call resumes a
-            paused sandbox: a sandbox that is already running, or that another request is already
-            resuming, keeps its sizes and they are ignored. Read them back with ``get_info()``. An
-            unknown mode or a size that is not a positive integer raises `InvalidArgumentException`.
+            choose the memory and CPUs it resumes with. A sandbox that is already running keeps its
+            sizes and they are ignored. For a paused sandbox, a size its template or the team cannot
+            take is refused by the API; a size it can take is ignored when another request is already
+            resuming the sandbox. Read them back with ``get_info()``. The sizes need a control plane
+            built from `e2b-dev/runtime` at or after 2026-11-25; an older one drops them and resumes
+            at the paused sizes with no error. An unknown mode or key, or a size that is not a
+            positive integer, raises `InvalidArgumentException`.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 

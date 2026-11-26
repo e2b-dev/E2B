@@ -116,7 +116,7 @@ class TemplateInfo:
     """Number of CPUs allocated to the sandbox."""
 
     memory_mb: int
-    """Amount of memory in MiB allocated to the sandbox."""
+    """Amount of memory in MiB a sandbox created from the template starts with."""
 
     disk_size_mb: int
     """Disk size in MiB of the sandbox."""
@@ -216,8 +216,9 @@ class TemplateBuildInfo:
     max_cpu_count: Optional[int] = None
     """Maximum number of CPUs a sandbox can be started with. Set only for resizable builds."""
 
-    max_memory_mb: Optional[int] = None
-    """Memory in MiB a sandbox can be started with at most. Set only for builds whose memory is resizable."""
+    max_memory_mb: Optional[int] = field(default=None, kw_only=True)
+    """Memory in MiB a sandbox can be started with at most. Set only for builds whose memory is resizable.
+    Keyword-only, so the positional order of the fields after it is unchanged."""
 
     disk_size_mb: Optional[int] = None
     """Disk size in MiB of the sandbox."""

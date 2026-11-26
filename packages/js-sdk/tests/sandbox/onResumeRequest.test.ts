@@ -183,6 +183,8 @@ const invalidObjects = [
   { memoryMB: 1024.5 },
   { cpuCount: -1 },
   { cpuCount: '4' },
+  { memoryMb: 4096 },
+  { mode: 'reboot', cpus: 4 },
 ]
 
 test.for(invalidObjects)(

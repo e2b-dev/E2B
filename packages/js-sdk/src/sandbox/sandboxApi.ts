@@ -893,9 +893,16 @@ export type SandboxOnResume = 'restore' | 'reboot'
  * How to bring a paused sandbox back, with the sizes to resume it at.
  *
  * Everything here applies only when the connect resumes a paused sandbox, by
- * a restore or a reboot. A sandbox that is already running, or that another
- * request is already resuming, keeps its mode and sizes and these values are
- * ignored. Read the sizes the sandbox runs with from `getInfo()`.
+ * a restore or a reboot. A sandbox that is already running keeps its mode and
+ * sizes and these values are ignored. For a paused sandbox, a size its
+ * template or the team cannot take is refused by the API; a size it can take
+ * is ignored when another request is already resuming the sandbox. Read the
+ * sizes the sandbox runs with from `getInfo()`.
+ *
+ * The sizes need a control plane that knows them: E2B Cloud, or a self-hosted
+ * or BYOC deployment built from `e2b-dev/runtime` at or after the commit that
+ * added `memoryMB` and `cpuCount` to connect (2026-11-25). An older control
+ * plane drops them and resumes at the paused sizes with no error.
  */
 export type SandboxOnResumeOptions = {
   /**
@@ -949,7 +956,8 @@ export type SandboxConnectOpts = ConnectionOpts & {
    *
    * @default 'restore'
    * @throws {@link InvalidArgumentError} if the mode is outside the two
-   * literals, or a size is not a positive integer.
+   * literals, a size is not a positive integer, or the object has an unknown
+   * key.
    */
   onResume?: SandboxOnResume | SandboxOnResumeOptions
 }
@@ -2328,6 +2336,7 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
 }
 
 const allowedOnResumeModes: readonly SandboxOnResume[] = ['restore', 'reboot']
+const allowedOnResumeKeys: readonly string[] = ['mode', 'memoryMB', 'cpuCount']
 
 // A nullish value is not a choice of restore, matching every other nullish
 // option. Anything else invalid never reaches the API, which cannot reject a
@@ -2343,6 +2352,15 @@ function resolveOnResume(
   if (typeof options !== 'object' || Array.isArray(options)) {
     throw new InvalidArgumentError(
       `onResume must be one of: ${allowedOnResumeModes.join(', ')}, or an object (got ${JSON.stringify(onResume)}).`
+    )
+  }
+  // A misspelled size would otherwise resume at the paused size in silence.
+  const unknownKeys = Object.keys(options).filter(
+    (key) => !allowedOnResumeKeys.includes(key)
+  )
+  if (unknownKeys.length > 0) {
+    throw new InvalidArgumentError(
+      `onResume has unknown keys: ${unknownKeys.sort().join(', ')}.`
     )
   }
   const mode = options.mode ?? undefined
