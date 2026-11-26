@@ -55,7 +55,7 @@ export const portForwardCommand = new commander.Command('port-forward')
   .argument('<sandboxID>', 'sandbox ID to forward the ports to')
   .argument(
     '<local:remote...>',
-    `forward ${asBold('<local>')} on this machine to ${asBold('<remote>')} in the sandbox, repeat to forward several ports`,
+    `forward ${asBold('<local>')} on this machine to ${asBold('<remote>')} in the sandbox (${asBold(':<remote>')} picks a free local port), repeat to forward several ports`,
     collectPortMapping
   )
   .alias('pf')
@@ -128,8 +128,9 @@ export const portForwardCommand = new commander.Command('port-forward')
           server.listen(localPort, '127.0.0.1', resolve)
         })
 
+        const { port } = server.address() as net.AddressInfo
         console.log(
-          `Forwarding 127.0.0.1:${localPort} -> sandbox ${asPrimary(sandbox.sandboxId)} port ${remotePort}`
+          `Forwarding 127.0.0.1:${port} -> sandbox ${asPrimary(sandbox.sandboxId)} port ${remotePort}`
         )
       }
 

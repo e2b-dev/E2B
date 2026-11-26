@@ -27,11 +27,11 @@ function startPortForward(sandboxId: string, ...mappings: string[]) {
     [cliPath, 'sandbox', 'port-forward', sandboxId, ...mappings],
     { env, stdio: ['ignore', 'pipe', 'pipe'] }
   )
-  const ready = new Promise<void>((resolve, reject) => {
+  const ready = new Promise<string>((resolve, reject) => {
     let output = ''
     child.stdout.on('data', (chunk) => {
       output += chunk
-      if (output.split('Forwarding').length > mappings.length) resolve()
+      if (output.split('Forwarding').length > mappings.length) resolve(output)
     })
     child.stderr.on('data', (chunk) => (output += chunk))
     child.on('exit', (code) =>
@@ -162,15 +162,18 @@ describe('sandbox port-forward', () => {
         sandbox.sandboxId,
         '13581:3000',
         '13582:4000',
-        '13583:3000'
+        ':3000'
       )
       children.push(forward.child)
-      await forward.ready
+      const output = await forward.ready
+      const randomPort = Number(
+        output.match(/127\.0\.0\.1:(?!13581)(\d+) -> .* port 3000/)?.[1]
+      )
 
       for (const [port, body] of [
         [13581, 'hello from sandbox'],
         [13582, 'hello from port 4000'],
-        [13583, 'hello from sandbox'],
+        [randomPort, 'hello from sandbox'],
       ] as const) {
         const res = await fetch(`http://127.0.0.1:${port}/hello.txt`)
         expect(await res.text()).toBe(body)

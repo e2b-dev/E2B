@@ -27,31 +27,44 @@ export const WEBSOCAT_SANDBOX_PATH = `${WEBSOCAT_SANDBOX_DIR}/websocat-${WEBSOCA
 const port = integer('Port', { min: 1, max: 65535 })
 
 /**
- * Commander parser for `local:remote`, or a single `port` used for both sides.
+ * Commander parser for `local:remote`, a single `port` used for both sides, or
+ * `:remote` for a random free local port (`localPort` 0).
  */
 export const parsePortMapping = zodParser(
   z
     .string()
-    .regex(/^[^:]*(:[^:]*)?$/, 'Expected <local>:<remote> or <port>.')
+    .regex(
+      /^[^:]*(:[^:]*)?$/,
+      'Expected <local>:<remote>, <port> or :<remote>.'
+    )
     .transform((value) => {
       const [localPort, remotePort = localPort] = value.split(':')
       return { localPort, remotePort }
     })
-    .pipe(z.object({ localPort: port, remotePort: port }))
+    .pipe(
+      z.object({
+        localPort: z.union([z.literal('').transform(() => 0), port]),
+        remotePort: port,
+      })
+    )
 )
 
 export type PortMapping = ReturnType<typeof parsePortMapping>
 
 /**
  * Commander parser for a variadic list of {@link parsePortMapping} arguments.
- * Rejects a local port given twice, which could only be bound once.
+ * Rejects a local port given twice, which could only be bound once; random
+ * local ports never clash.
  */
 export function collectPortMapping(
   value: string,
   previous: PortMapping[] = []
 ): PortMapping[] {
   const mapping = parsePortMapping(value)
-  if (previous.some(({ localPort }) => localPort === mapping.localPort)) {
+  if (
+    mapping.localPort !== 0 &&
+    previous.some(({ localPort }) => localPort === mapping.localPort)
+  ) {
     throw new InvalidArgumentError(
       `Local port ${mapping.localPort} is forwarded more than once.`
     )

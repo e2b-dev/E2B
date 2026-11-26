@@ -24,7 +24,14 @@ describe('port-forward helpers', () => {
     })
   })
 
-  test.each(['', 'abc', '0', '65536', '80:', ':80', '1:2:3', '80.5', '-1'])(
+  test('parsePortMapping reads :remote as a random local port', () => {
+    expect(parsePortMapping(':3000')).toEqual({
+      localPort: 0,
+      remotePort: 3000,
+    })
+  })
+
+  test.each(['', 'abc', '0', '65536', '80:', ':', ':0', '0:80', '1:2:3', '80.5', '-1'])(
     'parsePortMapping rejects %j',
     (value: string) => {
       expect(() => parsePortMapping(value)).toThrow(
@@ -37,6 +44,13 @@ describe('port-forward helpers', () => {
     expect(collectPortMapping('5432', collectPortMapping('8000:3000'))).toEqual([
       { localPort: 8000, remotePort: 3000 },
       { localPort: 5432, remotePort: 5432 },
+    ])
+  })
+
+  test('collectPortMapping allows several random local ports', () => {
+    expect(collectPortMapping(':4000', collectPortMapping(':3000'))).toEqual([
+      { localPort: 0, remotePort: 3000 },
+      { localPort: 0, remotePort: 4000 },
     ])
   })
 
