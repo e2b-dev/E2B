@@ -2336,7 +2336,11 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
 }
 
 const allowedOnResumeActions: readonly SandboxOnResume[] = ['restore', 'reboot']
-const allowedOnResumeKeys: readonly string[] = ['action', 'memoryMB', 'cpuCount']
+const allowedOnResumeKeys: readonly string[] = [
+  'action',
+  'memoryMB',
+  'cpuCount',
+]
 
 // A nullish value is not a choice of restore, matching every other nullish
 // option. Anything else invalid never reaches the API, which cannot reject an
