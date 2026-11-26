@@ -66,7 +66,7 @@ export function collectPortMapping(
     previous.some(({ localPort }) => localPort === mapping.localPort)
   ) {
     throw new InvalidArgumentError(
-      `Local port ${mapping.localPort} is forwarded more than once.`
+      `Local port ${mapping.localPort} is forwarded more than once. Use a different <local> port for each mapping; a <remote> port can repeat.`
     )
   }
   return [...previous, mapping]
