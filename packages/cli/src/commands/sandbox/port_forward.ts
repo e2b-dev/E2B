@@ -63,8 +63,11 @@ export const portForwardCommand = new commander.Command('port-forward')
     let sandbox: Sandbox | undefined
     const tunnels: Tunnel[] = []
     let stopping = false
+    let starting: Promise<unknown> | undefined
     const stop = async () => {
       stopping = true
+      // Wait for websocats still starting, so they are stopped too.
+      await starting
       await Promise.all(
         tunnels
           .filter((tunnel) => tunnel.owned)
@@ -84,17 +87,6 @@ export const portForwardCommand = new commander.Command('port-forward')
         ? { 'e2b-traffic-access-token': sandbox.trafficAccessToken }
         : {}
 
-      await installWebsocat(sandbox)
-      const remotePorts = [...new Set(mappings.map((m) => m.remotePort))]
-      // allSettled so a failed start can't leave another websocat running
-      // unseen by stop().
-      const started = await Promise.allSettled(
-        remotePorts.map(async (remotePort) => {
-          const tunnel = await startWebsocat(connected, remotePort)
-          tunnels.push(tunnel)
-          return tunnel
-        })
-      )
       // Not setupSignalHandlers: it also catches SIGPIPE, which a local client
       // resetting its connection raises and must not stop the forward.
       for (const signal of STOP_SIGNALS) {
@@ -103,6 +95,20 @@ export const portForwardCommand = new commander.Command('port-forward')
           process.exit(0)
         })
       }
+
+      await installWebsocat(sandbox)
+      const remotePorts = [...new Set(mappings.map((m) => m.remotePort))]
+      // allSettled so a failed start can't leave another websocat running
+      // unseen by stop().
+      const startAll = Promise.allSettled(
+        remotePorts.map(async (remotePort) => {
+          const tunnel = await startWebsocat(connected, remotePort)
+          tunnels.push(tunnel)
+          return tunnel
+        })
+      )
+      starting = startAll
+      const started = await startAll
       const failed = started.find((result) => result.status === 'rejected')
       if (failed) throw failed.reason
       await Promise.all(
