@@ -1,11 +1,12 @@
 /**
- * Forward a local port to a port inside a running sandbox.
+ * Forward local ports to ports inside a running sandbox.
  *
- * websocat runs in the sandbox, exposing the remote TCP port as a WebSocket
- * server on websocketPortFor(remote). The CLI listens on the local port and
- * tunnels each accepted connection over its own WebSocket. The CLI kills the
- * websocat it started when it exits; a concurrent port-forward to the same
- * remote port shares that websocat and exits with it.
+ * For each remote port, websocat runs in the sandbox, exposing the remote TCP
+ * port as a WebSocket server on websocketPortFor(remote). The CLI listens on
+ * the local ports and tunnels each accepted connection over its own WebSocket.
+ * The CLI kills the websocats it started when it exits, and exits when any of
+ * its websocats does; a concurrent port-forward to the same remote port shares
+ * that websocat and exits with it.
  */
 
 import * as os from 'node:os'
@@ -22,7 +23,7 @@ import * as commander from '@commander-js/extra-typings'
 import { ensureAuth } from '../../api'
 import { asBold, asPrimary } from 'src/utils/format'
 import {
-  parsePortMapping,
+  collectPortMapping,
   parseTunnelMarker,
   randomTunnelPath,
   removeTunnelMarkerCommand,
@@ -41,40 +42,59 @@ const STOP_SIGNALS = (
   ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'] as const
 ).filter((signal) => signal in os.constants.signals)
 
+type Tunnel = {
+  handle: CommandHandle
+  owned: boolean
+  path: string
+  wsPort: number
+  remotePort: number
+}
+
 export const portForwardCommand = new commander.Command('port-forward')
-  .description('forward a local port to a port in a running sandbox')
-  .argument('<sandboxID>', 'sandbox ID to forward the port to')
+  .description('forward local ports to ports in a running sandbox')
+  .argument('<sandboxID>', 'sandbox ID to forward the ports to')
   .argument(
-    '<local:remote>',
-    `forward ${asBold('<local>')} on this machine to ${asBold('<remote>')} in the sandbox`,
-    parsePortMapping
+    '<local:remote...>',
+    `forward ${asBold('<local>')} on this machine to ${asBold('<remote>')} in the sandbox, repeat to forward several ports`,
+    collectPortMapping
   )
   .alias('pf')
-  .action(async (sandboxID, { localPort, remotePort }) => {
+  .action(async (sandboxID, mappings) => {
     let sandbox: Sandbox | undefined
-    let websocat:
-      { handle: CommandHandle; owned: boolean; path: string } | undefined
+    const tunnels: Tunnel[] = []
     let stopping = false
-    const wsPort = websocketPortFor(remotePort)
     const stop = async () => {
       stopping = true
-      if (sandbox && websocat?.owned) {
-        const { pid } = websocat.handle
-        await sandbox.commands.kill(pid).catch(() => {})
-        await sandbox.commands
-          .run(removeTunnelMarkerCommand(wsPort, remotePort, pid))
-          .catch(() => {})
-      }
+      await Promise.all(
+        tunnels
+          .filter((tunnel) => tunnel.owned)
+          .map(async ({ handle: { pid }, wsPort, remotePort }) => {
+            await sandbox?.commands.kill(pid).catch(() => {})
+            await sandbox?.commands
+              .run(removeTunnelMarkerCommand(wsPort, remotePort, pid))
+              .catch(() => {})
+          })
+      )
     }
 
     try {
       sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
+      const connected = sandbox
       const headers: Record<string, string> = sandbox.trafficAccessToken
         ? { 'e2b-traffic-access-token': sandbox.trafficAccessToken }
         : {}
 
-      websocat = await startWebsocat(sandbox, wsPort, remotePort)
-      const { handle, path } = websocat
+      await installWebsocat(sandbox)
+      const remotePorts = [...new Set(mappings.map((m) => m.remotePort))]
+      // allSettled so a failed start can't leave another websocat running
+      // unseen by stop().
+      const started = await Promise.allSettled(
+        remotePorts.map(async (remotePort) => {
+          const tunnel = await startWebsocat(connected, remotePort)
+          tunnels.push(tunnel)
+          return tunnel
+        })
+      )
       // Not setupSignalHandlers: it also catches SIGPIPE, which a local client
       // resetting its connection raises and must not stop the forward.
       for (const signal of STOP_SIGNALS) {
@@ -83,30 +103,48 @@ export const portForwardCommand = new commander.Command('port-forward')
           process.exit(0)
         })
       }
-      await waitForWebsocat(sandbox.getHost(wsPort), headers, handle)
-
-      const url = `wss://${sandbox.getHost(wsPort)}${path}`
-      const server = net.createServer({ allowHalfOpen: true }, (socket) =>
-        tunnelSocket(socket, url, headers, () =>
-          console.error(
-            `Connection to sandbox port ${remotePort} failed, is anything listening on it?`
-          )
+      const failed = started.find((result) => result.status === 'rejected')
+      if (failed) throw failed.reason
+      await Promise.all(
+        tunnels.map(({ wsPort, handle }) =>
+          waitForWebsocat(connected.getHost(wsPort), headers, handle)
         )
       )
-      await new Promise<void>((resolve, reject) => {
-        server.once('error', reject)
-        server.listen(localPort, '127.0.0.1', resolve)
-      })
 
-      console.log(
-        `Forwarding 127.0.0.1:${localPort} -> sandbox ${asPrimary(sandbox.sandboxId)} port ${remotePort}`
+      for (const { localPort, remotePort } of mappings) {
+        const { wsPort, path } = tunnels.find(
+          (tunnel) => tunnel.remotePort === remotePort
+        )!
+        const url = `wss://${sandbox.getHost(wsPort)}${path}`
+        const server = net.createServer({ allowHalfOpen: true }, (socket) =>
+          tunnelSocket(socket, url, headers, () =>
+            console.error(
+              `Connection to sandbox port ${remotePort} failed, is anything listening on it?`
+            )
+          )
+        )
+        await new Promise<void>((resolve, reject) => {
+          server.once('error', reject)
+          server.listen(localPort, '127.0.0.1', resolve)
+        })
+
+        console.log(
+          `Forwarding 127.0.0.1:${localPort} -> sandbox ${asPrimary(sandbox.sandboxId)} port ${remotePort}`
+        )
+      }
+
+      const exited = await Promise.race(
+        tunnels.map(async (tunnel) => ({
+          tunnel,
+          handle: await waitForExit(connected, tunnel.handle),
+        }))
       )
-
-      const exited = await waitForExit(sandbox, handle)
       if (stopping) return
+      const { handle, tunnel } = exited
       console.error(
-        `websocat in sandbox exited: ${exited.stderr || exited.error || ''}`.trim()
+        `websocat for sandbox port ${tunnel.remotePort} exited: ${handle.stderr || handle.error || ''}`.trim()
       )
+      await stop()
       process.exit(1)
     } catch (err: any) {
       if (stopping) return
@@ -117,15 +155,30 @@ export const portForwardCommand = new commander.Command('port-forward')
   })
 
 /**
- * Starts websocat in the sandbox, or connects to the one a concurrent
- * port-forward already runs for the same ports. `owned` is false in that case.
+ * Downloads websocat into the sandbox unless it's already there.
+ */
+async function installWebsocat(sandbox: Sandbox): Promise<void> {
+  if (await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH)) return
+  console.log('Downloading websocat into the sandbox...')
+  const arch = (await sandbox.commands.run('uname -m')).stdout.trim()
+  await sandbox.commands.run(websocatInstallCommand(arch)).catch((err) => {
+    throw new Error(
+      `Failed to download websocat in the sandbox: ${err.stderr || err.message}. ` +
+        'Check that the sandbox has internet access and can reach github.com.'
+    )
+  })
+}
+
+/**
+ * Starts websocat in the sandbox for `remotePort`, or connects to the one a
+ * concurrent port-forward already runs for it. `owned` is false in that case.
  * `path` is the secret URI path websocat accepts WebSocket connections on.
  */
 async function startWebsocat(
   sandbox: Sandbox,
-  wsPort: number,
   remotePort: number
-): Promise<{ handle: CommandHandle; owned: boolean; path: string }> {
+): Promise<Tunnel> {
+  const wsPort = websocketPortFor(remotePort)
   const marker = tunnelMarkerPath(wsPort, remotePort)
   const existing = parseTunnelMarker(
     await sandbox.files.read(marker).catch(() => '')
@@ -134,29 +187,20 @@ async function startWebsocat(
     const handle = await sandbox.commands
       .connect(existing.pid, { timeoutMs: 0 })
       .catch(() => undefined)
-    if (handle) return { handle, owned: false, path: existing.path }
+    if (handle) {
+      return { handle, owned: false, path: existing.path, wsPort, remotePort }
+    }
   }
   // A missing, malformed or stale marker (e.g. the CLI that started websocat
   // crashed) would otherwise make the noclobber write below fail.
   await sandbox.files.remove(marker).catch(() => {})
-
-  if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
-    console.log('Downloading websocat into the sandbox...')
-    const arch = (await sandbox.commands.run('uname -m')).stdout.trim()
-    await sandbox.commands.run(websocatInstallCommand(arch)).catch((err) => {
-      throw new Error(
-        `Failed to download websocat in the sandbox: ${err.stderr || err.message}. ` +
-          'Check that the sandbox has internet access and can reach github.com.'
-      )
-    })
-  }
 
   const path = randomTunnelPath()
   const handle = await sandbox.commands.run(
     websocatStartCommand(wsPort, remotePort, path),
     { background: true, timeoutMs: 0 }
   )
-  return { handle, owned: true, path }
+  return { handle, owned: true, path, wsPort, remotePort }
 }
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import * as commander from '@commander-js/extra-typings'
 
 import {
+  collectPortMapping,
   parsePortMapping,
   parseTunnelMarker,
   randomTunnelPath,
@@ -31,6 +32,19 @@ describe('port-forward helpers', () => {
       )
     }
   )
+
+  test('collectPortMapping collects every mapping', () => {
+    expect(collectPortMapping('5432', collectPortMapping('8000:3000'))).toEqual([
+      { localPort: 8000, remotePort: 3000 },
+      { localPort: 5432, remotePort: 5432 },
+    ])
+  })
+
+  test('collectPortMapping rejects a local port given twice', () => {
+    expect(() =>
+      collectPortMapping('8000:4000', collectPortMapping('8000:3000'))
+    ).toThrow(commander.InvalidArgumentError)
+  })
 
   test('websocketPortFor shifts the port by half of 1024-65535', () => {
     expect(websocketPortFor(22)).toBe(32278)

@@ -4,6 +4,7 @@ import * as https from 'node:https'
 import * as net from 'node:net'
 import WebSocket from 'ws'
 import { z } from 'zod'
+import { InvalidArgumentError } from '@commander-js/extra-typings'
 
 import { integer, zodParser } from 'src/validation'
 
@@ -38,6 +39,25 @@ export const parsePortMapping = zodParser(
     })
     .pipe(z.object({ localPort: port, remotePort: port }))
 )
+
+export type PortMapping = ReturnType<typeof parsePortMapping>
+
+/**
+ * Commander parser for a variadic list of {@link parsePortMapping} arguments.
+ * Rejects a local port given twice, which could only be bound once.
+ */
+export function collectPortMapping(
+  value: string,
+  previous: PortMapping[] = []
+): PortMapping[] {
+  const mapping = parsePortMapping(value)
+  if (previous.some(({ localPort }) => localPort === mapping.localPort)) {
+    throw new InvalidArgumentError(
+      `Local port ${mapping.localPort} is forwarded more than once.`
+    )
+  }
+  return [...previous, mapping]
+}
 
 /**
  * The sandbox port websocat listens on for `remotePort`: the port shifted by

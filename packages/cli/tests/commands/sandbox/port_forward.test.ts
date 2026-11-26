@@ -15,7 +15,7 @@ const apiKey = process.env.E2B_API_KEY
 const integrationTest = test.skipIf(!apiKey || isDebug)
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
 
-function startPortForward(sandboxId: string, mapping: string) {
+function startPortForward(sandboxId: string, ...mappings: string[]) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     E2B_DOMAIN: domain,
@@ -24,14 +24,14 @@ function startPortForward(sandboxId: string, mapping: string) {
   delete env.E2B_DEBUG
   const child = spawn(
     'node',
-    [cliPath, 'sandbox', 'port-forward', sandboxId, mapping],
+    [cliPath, 'sandbox', 'port-forward', sandboxId, ...mappings],
     { env, stdio: ['ignore', 'pipe', 'pipe'] }
   )
   const ready = new Promise<void>((resolve, reject) => {
     let output = ''
     child.stdout.on('data', (chunk) => {
       output += chunk
-      if (output.includes('Forwarding')) resolve()
+      if (output.split('Forwarding').length > mappings.length) resolve()
     })
     child.stderr.on('data', (chunk) => (output += chunk))
     child.on('exit', (code) =>
@@ -39,6 +39,11 @@ function startPortForward(sandboxId: string, mapping: string) {
     )
   })
   return { child, ready }
+}
+
+async function websocatRunning(sandbox: Sandbox) {
+  const processes = await sandbox.commands.list()
+  return processes.some((p) => p.args.join(' ').includes('websocat'))
 }
 
 describe('sandbox port-forward', () => {
@@ -56,6 +61,12 @@ describe('sandbox port-forward', () => {
     await sandbox.files.write('/tmp/www/hello.txt', 'hello from sandbox')
     await sandbox.commands.run('python3 -m http.server 3000', {
       cwd: '/tmp/www',
+      background: true,
+      timeoutMs: 0,
+    })
+    await sandbox.files.write('/tmp/www2/hello.txt', 'hello from port 4000')
+    await sandbox.commands.run('python3 -m http.server 4000', {
+      cwd: '/tmp/www2',
       background: true,
       timeoutMs: 0,
     })
@@ -134,13 +145,44 @@ describe('sandbox port-forward', () => {
       })
       await secondExit
 
-      const processes = await sandbox.commands.list()
-      expect(processes.some((p) => p.args.join(' ').includes('websocat'))).toBe(false)
+      expect(await websocatRunning(sandbox)).toBe(false)
       expect(
         await sandbox.files.exists(
           tunnelMarkerPath(websocketPortFor(3000), 3000)
         )
       ).toBe(false)
+    }
+  )
+
+  integrationTest(
+    'forwards several ports in one command',
+    { timeout: 90_000 },
+    async () => {
+      const forward = startPortForward(
+        sandbox.sandboxId,
+        '13581:3000',
+        '13582:4000',
+        '13583:3000'
+      )
+      children.push(forward.child)
+      await forward.ready
+
+      for (const [port, body] of [
+        [13581, 'hello from sandbox'],
+        [13582, 'hello from port 4000'],
+        [13583, 'hello from sandbox'],
+      ] as const) {
+        const res = await fetch(`http://127.0.0.1:${port}/hello.txt`)
+        expect(await res.text()).toBe(body)
+      }
+
+      if (process.platform === 'win32') return
+
+      await new Promise((resolve) => {
+        forward.child.once('exit', resolve)
+        forward.child.kill('SIGINT')
+      })
+      expect(await websocatRunning(sandbox)).toBe(false)
     }
   )
 })
