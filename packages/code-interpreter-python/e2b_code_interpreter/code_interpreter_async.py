@@ -218,10 +218,10 @@ class AsyncSandbox(BaseAsyncSandbox):
                 headers=headers,
                 # `timeout` bounds the execution, `request_timeout` only the
                 # connect. Every non-connect phase must carry `timeout`: the
-                # SDK's pyqwest-backed transport collapses the per-phase
-                # timeouts into a single whole-request deadline and takes the
-                # longest of them, so leaving `request_timeout` on the write
-                # and pool phases would raise the floor to
+                # SDK's transport turns the per-phase timeouts into a single
+                # whole-request deadline of `max(read, write)` (see
+                # `e2b/api/transport_timeout.py`), so leaving
+                # `request_timeout` on the write phase would raise it to
                 # `max(timeout, request_timeout)` and silently ignore any
                 # `timeout` shorter than it. This matches the JS SDK, which
                 # aborts the execution on a `timeout`-long timer.

@@ -6,6 +6,11 @@ from e2b import TimeoutException
 from e2b_code_interpreter.code_interpreter_async import AsyncSandbox
 
 
+# The server has not interrupted the kernel after a client disconnect since
+# 2026-11-19 (JS and Python alike, any SDK version): SDK-452.
+@pytest.mark.xfail(
+    reason="SDK-452: kernel not interrupted after client disconnect", strict=False
+)
 async def test_subsequent_execution_works_after_client_timeout(
     async_sandbox: AsyncSandbox,
 ):
