@@ -4,8 +4,12 @@ from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
 from e2b.envd.rpc import handle_rpc_exception_with_health
-from e2b.envd.utils import timeout_to_ms
+from e2b.envd.utils import (
+    pid_selector,
+    timeout_to_ms,
+)
 from e2b.exceptions import InvalidArgumentException
+from e2b.validation import assert_pid
 
 InputKind = Literal["stdin", "pty"]
 
@@ -14,9 +18,7 @@ def stream_input_start(pid: int) -> process_pb.StreamInputRequest:
     return process_pb.StreamInputRequest(
         event=Oneof(
             "start",
-            process_pb.StreamInputRequest.StartEvent(
-                process=process_pb.ProcessSelector(selector=Oneof("pid", pid))
-            ),
+            process_pb.StreamInputRequest.StartEvent(process=pid_selector(pid)),
         )
     )
 
@@ -49,6 +51,7 @@ def stream_input_sync(
     check_health: Callable[[], Optional[bool]],
 ) -> None:
     """Send ``data`` to the process stdin or PTY over a single input stream."""
+    assert_pid(pid)
     if isinstance(data, (str, bytes, bytearray, memoryview)):
         raise InvalidArgumentException(
             "`data` must be an iterable of str or bytes chunks, not a single "

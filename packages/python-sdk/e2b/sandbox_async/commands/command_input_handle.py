@@ -3,6 +3,7 @@ from typing import Any, AsyncGenerator, Awaitable, Callable, Optional, Union
 
 from protobuf import Oneof
 
+from e2b.validation import assert_pid, resolve_timeout
 from e2b.connection_config import KEEPALIVE_PING_INTERVAL_SEC
 from e2b.envd.process import process_pb
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
@@ -35,6 +36,10 @@ class AsyncCommandInputHandle:
         check_health: Callable[[], Awaitable[Optional[bool]]],
         _keepalive_interval: float = KEEPALIVE_PING_INTERVAL_SEC,
     ) -> None:
+        # Checked before the stream task starts, where they would surface as
+        # a failed stream on the first ``send()``.
+        assert_pid(pid)
+        resolve_timeout(timeout, "timeout")
         self._rpc = rpc
         self._pid = pid
         self._input_kind = input_kind

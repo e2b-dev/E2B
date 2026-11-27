@@ -53,6 +53,17 @@ import {
   TemplateError,
 } from '../../errors'
 import {
+  isArrayBufferLike,
+  isAsyncIterable,
+  isBlobLike,
+  isReadableStreamLike,
+} from '../../is'
+import {
+  assertNonEmptyPath,
+  describeValue,
+  resolveTimeoutMs,
+} from '../../validation'
+import {
   BufferedUploadData,
   isStreamableData,
   toBlob,
@@ -207,6 +218,28 @@ const METADATA_HEADER_PREFIX = 'X-Metadata-'
 // printable US-ASCII.
 const METADATA_KEY_REGEX = /^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/
 const METADATA_VALUE_REGEX = /^[\x20-\x7e]*$/
+
+/**
+ * Check that upload data is of a type that is uploaded as its bytes. Anything
+ * else would be converted to text and written as that: `undefined`,
+ * `[object Object]`.
+ */
+function assertUploadData(data: unknown): asserts data is UploadData {
+  if (
+    typeof data === 'string' ||
+    isArrayBufferLike(data) ||
+    ArrayBuffer.isView(data) ||
+    isBlobLike(data) ||
+    isReadableStreamLike(data) ||
+    isAsyncIterable(data)
+  ) {
+    return
+  }
+
+  throw new InvalidArgumentError(
+    `Invalid data: expected a string, ArrayBuffer, Uint8Array, Blob, ReadableStream or AsyncIterable, got ${describeValue(data)}.`
+  )
+}
 
 function validateMetadata(metadata: Record<string, string> | undefined): void {
   if (!metadata) return
@@ -494,6 +527,10 @@ export class Filesystem {
       // user signal aborts, or the per-chunk idle timeout fires.
       const requestTimeoutMs =
         opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+      const idleTimeoutMs = resolveTimeoutMs(
+        opts?.streamIdleTimeoutMs ?? requestTimeoutMs,
+        'streamIdleTimeoutMs'
+      )
       const { controller, clearStartTimeout, cleanup } = setupRequestController(
         requestTimeoutMs,
         opts?.signal
@@ -538,7 +575,7 @@ export class Filesystem {
             clearStartTimeout,
             cleanup,
             controller,
-            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? requestTimeoutMs,
+            idleTimeoutMs,
           }
         )
       } catch (err) {
@@ -618,11 +655,11 @@ export class Filesystem {
     opts?: FilesystemWriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
-      throw new Error('Path or files are required')
+      throw new InvalidArgumentError('Path or files are required')
     }
 
     if (typeof pathOrFiles === 'string' && Array.isArray(dataOrOpts)) {
-      throw new Error(
+      throw new InvalidArgumentError(
         'Cannot specify both path and array of files. You have to specify either path and data for a single file or an array for multiple files.'
       )
     }
@@ -645,6 +682,15 @@ export class Filesystem {
           }
 
     if (writeFiles.length === 0) return [] as WriteInfo[]
+
+    for (const file of writeFiles) {
+      // Without its own path a multipart entry is stored under the name the
+      // form gives it, `blob`.
+      if (path === undefined) {
+        assertNonEmptyPath((file as WriteEntry)?.path, 'file path')
+      }
+      assertUploadData(file?.data)
+    }
 
     let user = writeOpts?.user
     if (
@@ -944,6 +990,10 @@ export class Filesystem {
     newPath: string,
     opts?: FilesystemRequestOpts
   ): Promise<EntryInfo> {
+    // envd would move the home directory, or move into it.
+    assertNonEmptyPath(oldPath, 'oldPath')
+    assertNonEmptyPath(newPath, 'newPath')
+
     try {
       const res = await this.rpc.move(
         {
@@ -977,6 +1027,9 @@ export class Filesystem {
    * @param opts connection options.
    */
   async remove(path: string, opts?: FilesystemRequestOpts): Promise<void> {
+    // envd would remove the home directory.
+    assertNonEmptyPath(path, 'path')
+
     try {
       await this.rpc.remove(
         { path },
@@ -1110,6 +1163,10 @@ export class Filesystem {
       )
     }
 
+    const timeoutMs = resolveTimeoutMs(
+      opts?.timeoutMs ?? this.defaultWatchTimeout,
+      'timeoutMs'
+    )
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -1131,7 +1188,7 @@ export class Filesystem {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultWatchTimeout,
+        timeoutMs,
       }
     )
 

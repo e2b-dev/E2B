@@ -3,11 +3,13 @@ import asyncio
 from typing import Awaitable, Callable, Optional
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from protobuf import Oneof
 from pyqwest import ReadError, StreamError, WriteError
 
 from e2b.envd.process import process_connect, process_pb
-from e2b.envd.utils import timeout_to_ms
+from e2b.envd.utils import (
+    pid_selector,
+    timeout_to_ms,
+)
 
 from e2b.exceptions import (
     SandboxException,
@@ -207,7 +209,7 @@ async def ahandle_rpc_exception_with_health(
 
 def _kill_request(pid: int) -> process_pb.SendSignalRequest:
     return process_pb.SendSignalRequest(
-        process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+        process=pid_selector(pid),
         signal=process_pb.Signal.SIGKILL,
     )
 

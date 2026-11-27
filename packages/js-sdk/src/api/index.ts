@@ -13,6 +13,7 @@ import {
 } from '../errors'
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
+import { pathSerializer } from '../validation'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -136,6 +137,7 @@ class ApiClient {
           explode: false,
         },
       },
+      pathSerializer,
     })
 
     if (config.logger) {

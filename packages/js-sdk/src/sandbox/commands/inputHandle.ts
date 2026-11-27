@@ -5,6 +5,7 @@ import {
   KEEPALIVE_PING_INTERVAL_SEC,
   STREAM_INPUT_TIMEOUT_MS,
 } from '../../connectionConfig'
+import { resolveTimeoutMs } from '../../validation'
 import {
   Process as ProcessService,
   StreamInputRequestSchema,
@@ -66,7 +67,10 @@ export class CommandInputHandle {
     this.completion = this.rpc
       .streamInput(this.requests(), {
         signal: opts.signal,
-        timeoutMs: opts.timeoutMs ?? STREAM_INPUT_TIMEOUT_MS,
+        timeoutMs: resolveTimeoutMs(
+          opts.timeoutMs ?? STREAM_INPUT_TIMEOUT_MS,
+          'timeoutMs'
+        ),
       })
       .then(() => {
         this.stopped = true

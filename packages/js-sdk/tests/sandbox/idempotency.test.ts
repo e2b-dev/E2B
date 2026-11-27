@@ -66,38 +66,29 @@ test('Sandbox.create sends a lowercase UUID idempotency key', async () => {
   expect(idempotencyKeys).toEqual([key])
 })
 
-test('Sandbox.create rejects idempotency keys outside 1-255 characters before a request', async () => {
-  const emptyKey = Sandbox.create('base', {
-    apiKey: TEST_API_KEY,
-    idempotencyKey: '',
-  })
-  await expect(emptyKey).rejects.toThrow(InvalidArgumentError)
-  await expect(emptyKey).rejects.toThrow(
-    'Invalid idempotencyKey: expected 1-255 characters, got 0.'
-  )
-
-  const longKey = Sandbox.create('base', {
-    apiKey: TEST_API_KEY,
-    idempotencyKey: 'a'.repeat(256),
-  })
-  await expect(longKey).rejects.toThrow(InvalidArgumentError)
-  await expect(longKey).rejects.toThrow(
-    'Invalid idempotencyKey: expected 1-255 characters, got 256.'
-  )
-
-  expect(idempotencyKeys).toEqual([])
-})
-
-test.each(['ABC', 'abc_1', ' abc ', '界'])(
-  'Sandbox.create rejects invalid idempotency key characters before a request: %s',
+test.each(['', ' abc ', 'abc ', '界', 'a\nb'])(
+  'Sandbox.create rejects an idempotency key the API would not see as given: %j',
   async (key) => {
-    await expect(
-      Sandbox.create('base', { apiKey: TEST_API_KEY, idempotencyKey: key })
-    ).rejects.toThrow(
-      'Invalid idempotencyKey: only lowercase letters, digits and hyphens are allowed.'
-    )
+    const created = Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      idempotencyKey: key,
+    })
 
+    await expect(created).rejects.toThrow(InvalidArgumentError)
+    await expect(created).rejects.toThrow(
+      'Invalid idempotencyKey: expected a non-empty string of printable ASCII characters that does not start or end with a space.'
+    )
     expect(idempotencyKeys).toEqual([])
+  }
+)
+
+// Which keys are accepted is the API's rule, so they are sent for it to judge.
+test.each(['ABC', 'abc_1', 'a'.repeat(256)])(
+  'Sandbox.create sends an idempotency key for the API to check: %s',
+  async (key) => {
+    await Sandbox.create('base', { apiKey: TEST_API_KEY, idempotencyKey: key })
+
+    expect(idempotencyKeys).toEqual([key])
   }
 )
 

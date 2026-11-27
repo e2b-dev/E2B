@@ -6,6 +6,7 @@ from pathlib import Path
 
 from e2b.connection_config import ClientFactory
 from e2b.exceptions import BuildException, InvalidArgumentException
+from e2b.validation import assert_integer
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd, wait_for_file
@@ -21,6 +22,7 @@ from e2b.template.utils import (
     get_caller_directory,
     make_traceback,
     pad_octal,
+    quote_package,
     read_dockerignore,
     read_gcp_service_account_json,
     get_caller_frame,
@@ -374,7 +376,7 @@ class TemplateBuilder:
         if not g:
             args.append("--user")
         if packages:
-            args.extend(packages)
+            args.extend(quote_package(package) for package in packages)
         else:
             args.append(".")
 
@@ -412,7 +414,7 @@ class TemplateBuilder:
         if dev:
             args.append("--save-dev")
         if packages:
-            args.extend(packages)
+            args.extend(quote_package(package) for package in packages)
 
         return self.run_cmd(" ".join(args), user="root" if g else None)
 
@@ -449,7 +451,7 @@ class TemplateBuilder:
         if dev:
             args.append("--dev")
         if packages:
-            args.extend(packages)
+            args.extend(quote_package(package) for package in packages)
 
         return self.run_cmd(" ".join(args), user="root" if g else None)
 
@@ -481,7 +483,7 @@ class TemplateBuilder:
         return self.run_cmd(
             [
                 "apt-get update",
-                f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends ' if no_install_recommends else ''}{'--fix-missing ' if fix_missing else ''}{' '.join(packages)}",
+                f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends ' if no_install_recommends else ''}{'--fix-missing ' if fix_missing else ''}{' '.join(quote_package(package) for package in packages)}",
             ],
             user="root",
         )
@@ -512,7 +514,10 @@ class TemplateBuilder:
         if isinstance(servers, str):
             servers = [servers]
 
-        return self.run_cmd(f"mcp-gateway pull {' '.join(servers)}", user="root")
+        return self.run_cmd(
+            f"mcp-gateway pull {' '.join(quote_package(server) for server in servers)}",
+            user="root",
+        )
 
     def git_clone(
         self,
@@ -545,6 +550,7 @@ class TemplateBuilder:
             args.append(f"--branch {shlex.quote(branch)}")
             args.append("--single-branch")
         if depth:
+            assert_integer(depth, "depth", 1, 2**31 - 1)
             args.append(f"--depth {depth}")
         if path:
             args.append(shlex.quote(str(path)))

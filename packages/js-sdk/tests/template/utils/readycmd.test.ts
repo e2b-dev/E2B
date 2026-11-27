@@ -6,6 +6,7 @@ import {
   waitForTimeout,
   waitForURL,
 } from '../../../src/template/readycmd'
+import { InvalidArgumentError } from '../../../src/errors'
 
 describe('readycmd', () => {
   test('waitForPort matches the exact listening port', () => {
@@ -46,4 +47,29 @@ describe('readycmd', () => {
     expect(waitForTimeout(5000).getCmd()).toBe('sleep 5')
     expect(waitForTimeout(100).getCmd()).toBe('sleep 1')
   })
+
+  test.each([[0], [65536], [80.5], [NaN], ['80; reboot']])(
+    'waitForPort refuses %j',
+    (port) => {
+      expect(() => waitForPort(port as number)).toThrow(InvalidArgumentError)
+    }
+  )
+
+  test.each([[20], [1000], [200.5], [NaN], ['200']])(
+    'waitForURL refuses status code %j',
+    (statusCode) => {
+      expect(() =>
+        waitForURL('http://localhost:3000', statusCode as number)
+      ).toThrow(InvalidArgumentError)
+    }
+  )
+
+  test.each([[NaN], [-1], [Infinity], ['5000']])(
+    'waitForTimeout refuses %j',
+    (timeout) => {
+      expect(() => waitForTimeout(timeout as number)).toThrow(
+        InvalidArgumentError
+      )
+    }
+  )
 })

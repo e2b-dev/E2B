@@ -17,6 +17,12 @@ import {
 import { Paginator } from '../paginator'
 import { resolveIdempotencyKey } from '../retry'
 import { timeoutToSeconds } from '../utils'
+import {
+  assertNoMissingValues,
+  assertStringList,
+  assertStringValues,
+  describeValue,
+} from '../validation'
 import { deleteTemplate } from '../template/buildApi'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -776,9 +782,11 @@ function toSandboxCreateResponse(
 export interface SandboxOpts extends ConnectionOpts {
   /**
    * Idempotency key sent as the `Idempotency-Key` header when creating a
-   * sandbox. Retries reuse the key. Keys must contain 1–255 lowercase ASCII
-   * letters, digits or hyphens (e.g. a lowercase UUID); other keys throw
-   * `InvalidArgumentError`.
+   * sandbox. Retries reuse the key. The API accepts 1–255 lowercase ASCII
+   * letters, digits or hyphens (e.g. a lowercase UUID) and answers any other
+   * key with an error. A key that cannot be sent as given (empty, not
+   * printable ASCII, or with a space at either end) throws
+   * `InvalidArgumentError` before the request.
    */
   idempotencyKey?: string
 
@@ -1247,6 +1255,7 @@ export interface SandboxMetrics {
 }
 
 function resolveNetworkSelector(
+  field: 'allowOut' | 'denyOut',
   selector: SandboxNetworkSelector | undefined,
   rules: Map<string, SandboxNetworkRule[]>
 ): string[] | undefined {
@@ -1254,11 +1263,16 @@ function resolveNetworkSelector(
     return undefined
   }
 
-  if (typeof selector === 'function') {
-    return selector({ allTraffic: ALL_TRAFFIC, rules })
-  }
+  // A callback that returns nothing (a block body without `return`) would
+  // leave the field off the request, and the sandbox would be created without
+  // the restriction it was given.
+  const resolved: unknown =
+    typeof selector === 'function'
+      ? selector({ allTraffic: ALL_TRAFFIC, rules })
+      : selector
+  assertStringList(resolved, `network ${field}`)
 
-  return selector
+  return resolved
 }
 
 /**
@@ -1281,19 +1295,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return proto === Object.prototype || proto === null
 }
 
-/** Name the shape a `transform` callback returned, for the error message. */
-function describeValue(value: unknown): string {
-  if (value === null) {
-    return 'null'
-  }
-
-  if (typeof value !== 'object') {
-    return typeof value
-  }
-
-  return Array.isArray(value) ? 'array' : (value.constructor?.name ?? 'object')
-}
-
 function resolveRulesForBody(
   rules: Map<string, SandboxNetworkRule[]>,
   ctx: SandboxNetworkTransformContext
@@ -1307,7 +1308,12 @@ function resolveRulesForBody(
         return {}
       }
 
+      // An `undefined` header value is dropped when the body is serialized,
+      // which would create the rule without the header it is for.
+      const headersName = `network rules['${host}'] transform headers`
+
       if (typeof rule.transform !== 'function') {
+        assertNoMissingValues(rule.transform.headers, headersName)
         return { transform: rule.transform }
       }
 
@@ -1331,6 +1337,11 @@ function resolveRulesForBody(
           `Network transform callback for '${host}' must return a transform object, got ${describeValue(transform)}.`
         )
       }
+
+      assertNoMissingValues(
+        transform.headers as Record<string, unknown> | undefined,
+        headersName
+      )
 
       return { transform: transform as SandboxNetworkTransform }
     })
@@ -1416,8 +1427,11 @@ function buildNetworkEgress(
     network.rules instanceof Map
       ? network.rules
       : new Map(Object.entries(network.rules ?? {}))
-  const allowOut = resolveNetworkSelector(network.allowOut, rules)
-  const denyOut = resolveNetworkSelector(network.denyOut, rules)
+  const allowOut = resolveNetworkSelector('allowOut', network.allowOut, rules)
+  const denyOut = resolveNetworkSelector('denyOut', network.denyOut, rules)
+  if (network.dnsServers != null) {
+    assertStringList(network.dnsServers, 'network dnsServers')
+  }
 
   return {
     ...(allowOut !== undefined ? { allowOut } : {}),
@@ -2049,6 +2063,11 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
+    // An `undefined` value is dropped when the body is serialized, so the
+    // sandbox would start without the variable or the metadata key.
+    assertStringValues(opts?.envs, 'envs')
+    assertStringValues(opts?.metadata, 'metadata')
+
     // Built before the network config: `transform` callbacks are resolved
     // against the workload tokens this request registers.
     const iam = buildIamBody(opts?.iam)
@@ -2244,6 +2263,8 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
 
     let metadata = undefined
     if (this.query?.metadata) {
+      // An `undefined` value would be sent as the text "undefined".
+      assertStringValues(this.query.metadata, 'query.metadata')
       const encodedPairs: Record<string, string> = Object.fromEntries(
         Object.entries(this.query.metadata).map(([key, value]) => [
           encodeURIComponent(key),

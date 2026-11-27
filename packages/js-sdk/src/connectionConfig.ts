@@ -3,6 +3,7 @@ import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
+import { resolveTimeoutMs } from './validation'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = [
@@ -180,9 +181,8 @@ export function buildRequestSignal(
   userSignal: AbortSignal | undefined
 ): AbortSignal | undefined {
   // `0` (and `undefined`) disable the request timeout.
-  const timeoutSignal = requestTimeoutMs
-    ? AbortSignal.timeout(requestTimeoutMs)
-    : undefined
+  const timeoutMs = resolveTimeoutMs(requestTimeoutMs, 'requestTimeoutMs')
+  const timeoutSignal = timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined
 
   if (timeoutSignal && userSignal) {
     return AbortSignal.any([timeoutSignal, userSignal])
@@ -217,6 +217,8 @@ export function setupRequestController(
   clearStartTimeout: () => void
   cleanup: () => void
 } {
+  // Checked first, so a refused value leaves no listener behind.
+  const timeoutMs = resolveTimeoutMs(requestTimeoutMs, 'requestTimeoutMs')
   const controller = new AbortController()
 
   const onUserAbort = () => abortWithReason(controller, userSignal?.reason)
@@ -228,17 +230,17 @@ export function setupRequestController(
     }
   }
 
-  let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
+  let reqTimeout: ReturnType<typeof setTimeout> | undefined = timeoutMs
     ? setTimeout(
         () =>
           abortWithReason(
             controller,
             new DOMException(
-              `Request handshake timed out after ${requestTimeoutMs}ms`,
+              `Request handshake timed out after ${timeoutMs}ms`,
               'TimeoutError'
             )
           ),
-        requestTimeoutMs
+        timeoutMs
       )
     : undefined
 
@@ -273,6 +275,7 @@ function createIdleAbort(
   idleTimeoutMs: number | undefined,
   label: string
 ): { arm: () => void; clear: () => void } {
+  idleTimeoutMs = resolveTimeoutMs(idleTimeoutMs, 'streamIdleTimeoutMs')
   let timer: ReturnType<typeof setTimeout> | undefined
   const clear = () => {
     if (timer) {
@@ -482,7 +485,9 @@ export class ConnectionConfig {
     this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
-    this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.requestTimeoutMs =
+      resolveTimeoutMs(opts?.requestTimeoutMs, 'requestTimeoutMs') ??
+      REQUEST_TIMEOUT_MS
     this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }

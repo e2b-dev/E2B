@@ -1,4 +1,8 @@
+import math
 import shlex
+
+from e2b.exceptions import InvalidArgumentException
+from e2b.validation import assert_integer
 
 
 class ReadyCmd:
@@ -37,6 +41,7 @@ def wait_for_port(port: int):
     # Match the exact listening port via ss's source-port filter (so e.g. port
     # 80 doesn't match 8080). ss exits 0 regardless of matches, so test for
     # non-empty output to signal readiness.
+    assert_integer(port, "port", 1, 65535)
     cmd = f'[ -n "$(ss -Htuln sport = :{port})" ]'
     return ReadyCmd(cmd)
 
@@ -63,6 +68,8 @@ def wait_for_url(url: str, status_code: int = 200):
     )
     ```
     """
+    # Matched as text against curl's three-digit status code.
+    assert_integer(status_code, "status_code", 100, 599)
     cmd = f'curl -s -o /dev/null -w "%{{http_code}}" {shlex.quote(url)} | grep -q "{status_code}"'
     return ReadyCmd(cmd)
 
@@ -138,7 +145,18 @@ def wait_for_timeout(timeout: int):
     )
     ```
     """
+    if (
+        isinstance(timeout, bool)
+        or not isinstance(timeout, (int, float))
+        or not math.isfinite(timeout)
+        or timeout < 0
+    ):
+        raise InvalidArgumentException(
+            f"Invalid timeout={timeout!r}: expected a non-negative number of "
+            "milliseconds."
+        )
+
     # convert to seconds, but ensure minimum of 1 second
-    seconds = max(1, timeout // 1000)
+    seconds = max(1, int(timeout // 1000))
     cmd = f"sleep {seconds}"
     return ReadyCmd(cmd)

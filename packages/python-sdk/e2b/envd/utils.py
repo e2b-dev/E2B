@@ -2,7 +2,7 @@
 
 import base64
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from packaging.version import Version
 from protobuf import Oneof
 
@@ -10,6 +10,7 @@ from e2b.connection_config import Username, default_username
 from e2b.envd.process import process_pb
 from e2b.envd.versions import ENVD_DEFAULT_USER
 from e2b.exceptions import SandboxException
+from e2b.validation import assert_pid, assert_pty_size, resolve_timeout
 
 
 def timeout_to_ms(timeout: Optional[float]) -> Optional[int]:
@@ -19,9 +20,27 @@ def timeout_to_ms(timeout: Optional[float]) -> Optional[int]:
     at least 1 ms so a sub-millisecond timeout stays a deadline instead of
     the 0 that connectrpc's ``timeout_ms or default`` fallback would
     discard."""
+    # A negative timeout would be a 1 ms deadline, and infinity or NaN an
+    # error from `round`; the first two are refused, infinity means no deadline.
+    timeout = resolve_timeout(timeout, "timeout")
     if not timeout:
         return None
     return max(1, round(timeout * 1000))
+
+
+def pid_selector(pid: int) -> process_pb.ProcessSelector:
+    """Select a process by its ID. The ID is checked first: one that does not
+    fit the message fails while the request is encoded, which is reported as
+    the sandbox being unavailable."""
+    assert_pid(pid)
+    return process_pb.ProcessSelector(selector=Oneof("pid", pid))
+
+
+def pty_size(size: Any) -> process_pb.PTY.Size:
+    """Build the PTY size message, checked for the same reason as
+    :func:`pid_selector`."""
+    assert_pty_size(size.cols, size.rows)
+    return process_pb.PTY.Size(rows=size.rows, cols=size.cols)
 
 
 def extract_start_pid(

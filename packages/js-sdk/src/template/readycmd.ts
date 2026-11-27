@@ -1,4 +1,6 @@
+import { InvalidArgumentError } from '../errors'
 import { shellQuote } from '../utils'
+import { assertInteger } from '../validation'
 
 /**
  * Class for ready check commands.
@@ -32,6 +34,7 @@ export class ReadyCmd {
  * ```
  */
 export function waitForPort(port: number): ReadyCmd {
+  assertInteger(port, 'port', 1, 65535)
   // Match the exact listening port via ss's source-port filter (so e.g. port
   // 80 doesn't match 8080). ss exits 0 regardless of matches, so test for
   // non-empty output to signal readiness.
@@ -57,6 +60,8 @@ export function waitForPort(port: number): ReadyCmd {
  * ```
  */
 export function waitForURL(url: string, statusCode: number = 200): ReadyCmd {
+  // Matched as text against curl's three-digit status code.
+  assertInteger(statusCode, 'statusCode', 100, 599)
   const cmd = `curl -s -o /dev/null -w "%{http_code}" ${shellQuote(url)} | grep -q "${statusCode}"`
   return new ReadyCmd(cmd)
 }
@@ -120,6 +125,12 @@ export function waitForFile(filename: string): ReadyCmd {
  * ```
  */
 export function waitForTimeout(timeout: number): ReadyCmd {
+  if (typeof timeout !== 'number' || !Number.isFinite(timeout) || timeout < 0) {
+    throw new InvalidArgumentError(
+      `Invalid timeout=${typeof timeout === 'number' ? timeout : JSON.stringify(timeout)}: expected a non-negative number of milliseconds.`
+    )
+  }
+
   // convert to seconds, but ensure minimum of 1 second
   const seconds = Math.max(1, Math.floor(timeout / 1000))
   const cmd = `sleep ${seconds}`

@@ -15,6 +15,7 @@ import {
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
 import { isArrayBufferLike, isBlobLike } from '../is'
+import { resolveTimeoutMs } from '../validation'
 import {
   VolumeError,
   VolumeNotFoundError,
@@ -579,6 +580,10 @@ export class Volume extends ClientFactory {
       // response arrives, the stream lives until it's consumed, cancelled, the
       // user signal aborts, or the per-chunk idle timeout fires. Matches the
       // sandbox `files.read` stream path.
+      const idleTimeoutMs = resolveTimeoutMs(
+        opts?.streamIdleTimeoutMs ?? config.requestTimeoutMs,
+        'streamIdleTimeoutMs'
+      )
       const { controller, clearStartTimeout, cleanup } = setupRequestController(
         config.requestTimeoutMs,
         opts?.signal
@@ -619,7 +624,7 @@ export class Volume extends ClientFactory {
             clearStartTimeout,
             cleanup,
             controller,
-            idleTimeoutMs: opts?.streamIdleTimeoutMs ?? config.requestTimeoutMs,
+            idleTimeoutMs,
           }
         )
       } catch (err) {

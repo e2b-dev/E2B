@@ -33,13 +33,14 @@ def resolve_idempotency_key(key: Optional[str]) -> Optional[str]:
         raise InvalidArgumentException(
             f"Invalid idempotency_key: expected a string, got {type(key).__name__}."
         )
-    if len(key) < 1 or len(key) > 255:
+    # Which keys the API takes (length, characters) is for the API to say.
+    # Refused here is only what it would never see as given: an empty value,
+    # which is no key at all, and a value the HTTP client trims or cannot put
+    # in a header.
+    if re.fullmatch(r"[\x21-\x7e]([\x20-\x7e]*[\x21-\x7e])?", key) is None:
         raise InvalidArgumentException(
-            f"Invalid idempotency_key: expected 1-255 characters, got {len(key)}."
-        )
-    if re.fullmatch(r"[a-z0-9-]+", key) is None:
-        raise InvalidArgumentException(
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed."
+            "Invalid idempotency_key: expected a non-empty string of printable "
+            "ASCII characters that does not start or end with a space."
         )
     return key
 

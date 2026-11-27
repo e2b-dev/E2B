@@ -203,9 +203,11 @@ class Sandbox(SandboxApi):
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :param idempotency_key: Idempotency key sent as the ``Idempotency-Key``
-            header when creating a sandbox. Retries reuse it. Keys must contain
+            header when creating a sandbox. Retries reuse it. The API accepts
             1–255 lowercase ASCII letters, digits or hyphens (e.g. a lowercase
-            UUID), otherwise ``InvalidArgumentException`` is raised.
+            UUID) and answers any other key with an error. A key that cannot
+            be sent as given (empty, not printable ASCII, or with a space at
+            either end) raises ``InvalidArgumentException`` before the request.
         :param cpu_count: CPUs to start with, from 1 to the template's ``max_cpu_count``. Defaults to the template's ``cpu_count``. Fixed-size templates accept only their own ``cpu_count``.
         :param memory_mb: Memory in MiB to start with, from the template's ``memory_mb`` up to its ``max_memory_mb``, in steps of 128 MiB. Defaults to the template's ``memory_mb``. Templates without a ``max_memory_mb`` accept only their own ``memory_mb``.
 
@@ -213,9 +215,10 @@ class Sandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
-        if not template and mcp is not None:
+        # `is None`: an empty name is the caller's value, for the API to refuse.
+        if template is None and mcp is not None:
             template = cls.default_mcp_template
-        elif not template:
+        elif template is None:
             template = cls.default_template
 
         transformed_mounts = None
@@ -1245,7 +1248,7 @@ class Sandbox(SandboxApi):
             traffic_access_token = None
         else:
             response = SandboxApi._create_sandbox(
-                template=template or cls.default_template,
+                template=(template if template is not None else cls.default_template),
                 timeout=timeout,
                 metadata=metadata,
                 env_vars=envs,

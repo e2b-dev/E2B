@@ -28,17 +28,24 @@ from e2b.exceptions import (
     ServiceBusyException,
     SandboxException,
 )
+from e2b.validation import assert_path_segment
 
 
-def encode_path_param(value: str) -> str:
+def encode_path_param(value: str, name: str = "ID") -> str:
     """
-    Percent-encode a template ID, name, or alias for use as one URL path segment.
+    Percent-encode an ID, name or alias for use as one URL path segment.
 
-    Endpoints that take a template ID also accept a name, which may be
-    namespaced (``namespace/name``) and carry a ``:tag``. Escaping those
-    separators keeps the value inside a single segment instead of splitting the
-    route, matching the JS SDK's ``encodeURIComponent``.
+    The generated client writes a path parameter into the URL as it is, so a
+    value with a separator would name a different route: ``../templates/x`` as
+    a sandbox ID would address a template. Endpoints that take a template ID
+    also accept a name, which may be namespaced (``namespace/name``) and carry
+    a ``:tag``. Escaping the separators keeps the value inside a single
+    segment, matching the JS SDK's ``encodeURIComponent``.
+
+    An empty value or a dot segment cannot be kept in place by escaping, so it
+    is refused; ``name`` names the argument in that error.
     """
+    assert_path_segment(value, name)
     return quote(value, safe="")
 
 

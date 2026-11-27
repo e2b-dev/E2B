@@ -333,3 +333,25 @@ def test_http_version_rejects_unknown_explicit_value(monkeypatch, value):
 
     with pytest.raises(InvalidArgumentException, match="http_version"):
         ConnectionConfig(http_version=value)
+
+
+# Instance methods (kill, set_timeout, get_info, ...) rebuild their config from
+# the API params; "disabled" used to come back as the 60 s default. Tested on
+# the config and not on the wire: a request without a timeout and one with the
+# default look the same until 60 seconds have passed.
+def test_request_timeout_disabled_on_the_config_survives_the_api_params():
+    params = ConnectionConfig(request_timeout=0).get_api_params()
+
+    assert ConnectionConfig(**params).request_timeout is None
+
+
+def test_request_timeout_disabled_for_one_call_survives_the_api_params():
+    params = ConnectionConfig().get_api_params(request_timeout=0)
+
+    assert ConnectionConfig(**params).request_timeout is None
+
+
+def test_default_request_timeout_survives_the_api_params():
+    params = ConnectionConfig().get_api_params()
+
+    assert ConnectionConfig(**params).request_timeout == 60

@@ -27,6 +27,7 @@ import {
 } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { InvalidArgumentError, SandboxError } from '../../errors'
+import { assertPid, resolveTimeoutMs } from '../../validation'
 import { CommandHandle, CommandOutput, CommandResult } from './commandHandle'
 import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
@@ -221,6 +222,8 @@ export class Commands {
     data: string | Uint8Array,
     opts?: CommandRequestOpts
   ): Promise<void> {
+    assertPid(pid)
+
     try {
       const payload =
         typeof data === 'string' ? new TextEncoder().encode(data) : data
@@ -279,6 +282,8 @@ export class Commands {
     pid: number,
     opts: CommandStreamInputOpts = {}
   ): CommandInputHandle {
+    assertPid(pid)
+
     return new CommandInputHandle(
       this.streamingRpc,
       pid,
@@ -297,6 +302,8 @@ export class Commands {
    * @param opts connection options.
    */
   async closeStdin(pid: number, opts?: CommandRequestOpts): Promise<void> {
+    assertPid(pid)
+
     if (!this.supportsStdinClose) {
       throw new SandboxError(
         `Sandbox envd version ${this.envdVersion} doesn't support closeStdin. Please rebuild your template to pick up the latest sandbox version.`
@@ -335,6 +342,8 @@ export class Commands {
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
   async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
+    assertPid(pid)
+
     return killProcess(
       this.rpc,
       pid,
@@ -356,6 +365,12 @@ export class Commands {
     pid: number,
     opts?: CommandConnectOpts & { retainOutput?: RetainOutput }
   ): Promise<CommandHandle<CommandOutput<RetainOutput>>> {
+    assertPid(pid)
+    const timeoutMs = resolveTimeoutMs(
+      opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+      'timeoutMs'
+    )
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -378,7 +393,7 @@ export class Commands {
         headers: {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        timeoutMs,
       }
     )
 
@@ -474,6 +489,10 @@ export class Commands {
     }
     const [shell, ...shellArgs] = shellOpt
 
+    const timeoutMs = resolveTimeoutMs(
+      opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+      'timeoutMs'
+    )
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -498,7 +517,7 @@ export class Commands {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        timeoutMs,
       }
     )
 

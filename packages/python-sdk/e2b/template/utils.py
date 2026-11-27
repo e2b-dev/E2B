@@ -7,6 +7,7 @@ import json
 import stat
 from wcmatch import glob
 import re
+import shlex
 import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
@@ -525,7 +526,35 @@ def pad_octal(mode: int) -> str:
     pad_octal(0o644)  # Returns "0644"
     ```
     """
+    # Written into a `chmod`/`mkdir -m` command; anything else would be an
+    # error from the format, or a mode nobody asked for.
+    if isinstance(mode, bool) or not isinstance(mode, int) or not 0 <= mode <= 0o7777:
+        raise InvalidArgumentException(
+            f"Invalid mode={mode!r}: expected an integer between 0 and 0o7777, "
+            "e.g. 0o755."
+        )
+
     return f"{mode:04o}"
+
+
+# What makes the shell split an argument or redirect it, and what shows an
+# argument was written for the shell on purpose.
+_SHELL_OPERATOR = re.compile(r"[<>|&;()]")
+_SHELL_SYNTAX = re.compile(r"[\s'\"\\$`]")
+
+
+def quote_package(arg: str) -> str:
+    """
+    Quote a package argument of an install command when the shell would read
+    part of it as an operator: ``numpy>=2`` installs ``numpy`` and redirects
+    the output into a file named ``=2``. An argument written for the shell
+    already (several words, quotes, a variable) is passed as it is, e.g.
+    ``-r requirements.txt``.
+    """
+    if _SHELL_OPERATOR.search(arg) and not _SHELL_SYNTAX.search(arg):
+        return shlex.quote(arg)
+
+    return arg
 
 
 def get_build_step_index(step: str, stack_traces_length: int) -> Optional[int]:
