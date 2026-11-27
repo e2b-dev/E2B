@@ -920,10 +920,8 @@ export class Filesystem {
 
       return true
     } catch (err) {
-      if (err instanceof ConnectError) {
-        if (err.code === Code.AlreadyExists) {
-          return false
-        }
+      if (err instanceof ConnectError && err.code === Code.AlreadyExists) {
+        return false
       }
 
       throw await handleFilesystemRpcError(err, this.checkHealth)
@@ -1016,10 +1014,8 @@ export class Filesystem {
 
       return true
     } catch (err) {
-      if (err instanceof ConnectError) {
-        if (err.code === Code.NotFound) {
-          return false
-        }
+      if (err instanceof ConnectError && err.code === Code.NotFound) {
+        return false
       }
 
       throw await handleFilesystemRpcError(err, this.checkHealth)

@@ -107,7 +107,7 @@ async function addPackageJsonScripts(
       // The library expects the directory path, not the full file path
       pkgJson = await PackageJson.load(root)
       cdPrefix = `cd ${templateDirName} && `
-    } catch (error) {
+    } catch {
       // Handle the case where package.json does not exist
       const createRoot = path.join(root, templateDirName)
       pkgJson = await PackageJson.create(createRoot)

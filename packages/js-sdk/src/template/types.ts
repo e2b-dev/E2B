@@ -346,7 +346,7 @@ export type TemplateBuildInfo = {
   finishedAt?: Date
 }
 
-export function convertTemplateBuildInfo(
+function convertTemplateBuildInfo(
   build: components['schemas']['TemplateBuild']
 ): TemplateBuildInfo {
   return {

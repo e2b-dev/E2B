@@ -552,9 +552,8 @@ class Filesystem:
             return True
 
         except Exception as e:
-            if isinstance(e, ConnectError):
-                if e.code == Code.NOT_FOUND:
-                    return False
+            if isinstance(e, ConnectError) and e.code == Code.NOT_FOUND:
+                return False
             raise _handle_filesystem_rpc_exception(e, self._envd_health_api)
 
     def get_info(
@@ -668,9 +667,8 @@ class Filesystem:
 
             return True
         except Exception as e:
-            if isinstance(e, ConnectError):
-                if e.code == Code.ALREADY_EXISTS:
-                    return False
+            if isinstance(e, ConnectError) and e.code == Code.ALREADY_EXISTS:
+                return False
             raise _handle_filesystem_rpc_exception(e, self._envd_health_api)
 
     def watch_dir(
