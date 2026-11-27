@@ -7,7 +7,12 @@ import httpx
 from pyqwest import SyncHTTPTransport
 from pyqwest.httpx import PyqwestTransport
 
-from e2b.api import encode_path_param, handle_api_exception, proxy_to_config
+from e2b.api import (
+    encode_path_param,
+    handle_api_exception,
+    is_route_validation_response,
+    proxy_to_config,
+)
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
@@ -508,7 +513,7 @@ def delete_template(client: AuthenticatedClient, template_id_or_name: str) -> bo
         client=client,
     )
 
-    if res.status_code == 404:
+    if res.status_code == 404 and not is_route_validation_response(res):
         return False
 
     if res.status_code >= 300:

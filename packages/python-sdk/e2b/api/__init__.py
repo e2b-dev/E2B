@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from types import TracebackType
 from typing import (
+    Any,
     NamedTuple,
     Optional,
     Protocol,
@@ -17,6 +18,7 @@ from httpx import AsyncBaseTransport, BaseTransport, Timeout
 from pyqwest import Proxy
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.models.error import Error
 from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig, ProxyTypes
@@ -189,15 +191,48 @@ def api_exception_from_code(
     return err
 
 
+def is_route_validation_error(error: Any) -> bool:
+    """
+    Whether a parsed API error body is a route-level request validation failure
+    (e.g. a misconfigured ``api_url`` hitting an unknown route, where the API's
+    OpenAPI validator replies 404 with ``validation error: ...``).
+    """
+    message = (
+        error.message
+        if isinstance(error, Error)
+        else error.get("message")
+        if isinstance(error, dict)
+        else None
+    )
+    return isinstance(message, str) and message.startswith("validation error:")
+
+
+def is_route_validation_response(res: Response[Any]) -> bool:
+    """
+    Whether an API response is a route-level request validation failure. Falls
+    back to parsing ``res.content`` for endpoints whose OpenAPI spec omits a
+    404 schema.
+    """
+    if res.parsed is not None:
+        return is_route_validation_error(res.parsed)
+    try:
+        body = json.loads(res.content) if res.content else None
+    except json.JSONDecodeError:
+        return False
+    return is_route_validation_error(body)
+
+
 def handle_api_exception(
     e: "SupportsApiErrorResponse",
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
 ):
     try:
-        body = json.loads(e.content) if e.content else {}
+        decoded = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
-        body = {}
+        decoded = {}
+
+    body = decoded if isinstance(decoded, dict) else {}
 
     message = body.get("message")
     if body.get("error_code") == GuestUnresponsiveException.code:

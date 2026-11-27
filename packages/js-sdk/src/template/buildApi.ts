@@ -1,7 +1,12 @@
 import fs from 'node:fs'
 import stream from 'node:stream'
 
-import { ApiClient, handleApiError, components } from '../api'
+import {
+  ApiClient,
+  handleApiError,
+  isRouteValidationError,
+  components,
+} from '../api'
 import { buildRequestSignal } from '../connectionConfig'
 import { loadUndici } from '../undici'
 import {
@@ -550,7 +555,7 @@ export async function deleteTemplate(
     signal,
   })
 
-  if (res.response.status === 404) {
+  if (res.response.status === 404 && !isRouteValidationError(res.error)) {
     return false
   }
 

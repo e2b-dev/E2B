@@ -53,6 +53,16 @@ export function apiErrorFromCode(
   return err
 }
 
+/**
+ * Whether a parsed API error body is a route-level request validation failure
+ * (e.g. a misconfigured `apiUrl` hitting an unknown route, where the API's
+ * OpenAPI validator replies 404 with `validation error: ...`).
+ */
+export function isRouteValidationError(error: unknown): boolean {
+  const message = (error as { message?: unknown } | undefined)?.message
+  return typeof message === 'string' && message.startsWith('validation error:')
+}
+
 export function handleApiError(
   response: FetchResponse<any, any, any>,
   errorClass: new (
