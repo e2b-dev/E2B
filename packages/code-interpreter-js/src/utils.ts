@@ -71,10 +71,12 @@ export async function* readLines(stream: ReadableStream<Uint8Array>) {
   // joined once per emitted line instead of being re-copied on every chunk,
   // which kept this generator O(n^2) in line length.
   const fragments: string[] = []
+  let finished = false
 
   try {
     while (true) {
       const { done, value } = await reader.read()
+      finished = done
 
       if (value !== undefined) {
         // Decode only the new chunk: TextDecoder in streaming mode already
@@ -106,6 +108,12 @@ export async function* readLines(stream: ReadableStream<Uint8Array>) {
       }
     }
   } finally {
+    // The consumer stopped early (a callback threw, a line failed to parse):
+    // cancel the body so the connection closes and the server stops the
+    // execution, instead of leaving it open until the execution ends.
+    if (!finished) {
+      await reader.cancel().catch(() => {})
+    }
     reader.releaseLock()
   }
 }
