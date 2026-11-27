@@ -58,11 +58,15 @@ export function createRpcLogger(logger: Logger): Interceptor {
   }
 }
 
+/**
+ * The hooks return nothing: openapi-fetch treats a returned value as a
+ * replacement and requires it to be an instance of the global `Request` /
+ * `Response`, which undici's responses on Node are not.
+ */
 export function createApiLogger(logger: Logger): Middleware {
   return {
     async onRequest({ request }) {
       logger.info?.(`Request ${request.method} ${request.url}`)
-      return request
     },
     async onResponse({ response }) {
       if (response.status >= 400) {
@@ -70,8 +74,6 @@ export function createApiLogger(logger: Logger): Middleware {
       } else {
         logger.info?.('Response:', response.status, response.statusText)
       }
-
-      return response
     },
   }
 }
