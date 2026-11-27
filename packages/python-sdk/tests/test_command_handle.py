@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, cast
+from typing import Any, Callable, cast
 
 import pytest
 
@@ -29,6 +29,16 @@ def _stderr_event(data: bytes) -> process_pb.StartResponse:
         event=process_pb.ProcessEvent(
             event=Oneof(
                 "data", process_pb.ProcessEvent.DataEvent(output=Oneof("stderr", data))
+            )
+        )
+    )
+
+
+def _pty_event(data: bytes) -> process_pb.StartResponse:
+    return process_pb.StartResponse(
+        event=process_pb.ProcessEvent(
+            event=Oneof(
+                "data", process_pb.ProcessEvent.DataEvent(output=Oneof("pty", data))
             )
         )
     )
@@ -115,6 +125,106 @@ async def test_async_disconnect_stops_callbacks():
     events.push(_stdout_event(b"b"))
     await asyncio.sleep(0.05)
     assert chunks == ["a"]
+
+
+@pytest.mark.parametrize(
+    "output,event_factory",
+    [("stdout", _stdout_event), ("stderr", _stderr_event), ("pty", _pty_event)],
+)
+@pytest.mark.parametrize("callback_task", [False, True], ids=["direct", "task"])
+async def test_async_disconnect_returns_from_output_callback(
+    output: str,
+    event_factory: Callable[[bytes], process_pb.StartResponse],
+    callback_task: bool,
+):
+    closed = asyncio.Event()
+    disconnect_returned = False
+    reached_late_output = False
+    chunks: list[str | bytes] = []
+    data = b"a" + EMOJI_BYTES[:2]
+
+    async def events():
+        nonlocal reached_late_output
+        try:
+            yield event_factory(data)
+            reached_late_output = True
+            yield event_factory(b"late")
+            yield _end_event()
+        finally:
+            await asyncio.sleep(0)
+            closed.set()
+
+    async def on_output(chunk: str | bytes):
+        nonlocal disconnect_returned
+        chunks.append(chunk)
+        await handle.disconnect()
+        assert closed.is_set()
+        await asyncio.sleep(0)
+        disconnect_returned = True
+
+    def start_output_task(chunk: str | bytes):
+        return asyncio.create_task(on_output(chunk))
+
+    callback = start_output_task if callback_task else on_output
+    handle = AsyncCommandHandle(
+        pid=1,
+        handle_kill=_kill,
+        events=events(),
+        on_stdout=callback if output == "stdout" else None,
+        on_stderr=callback if output == "stderr" else None,
+        on_pty=callback if output == "pty" else None,
+    )
+    try:
+        await asyncio.wait_for(asyncio.shield(handle._wait), timeout=1)
+        assert disconnect_returned
+        assert closed.is_set()
+        assert not reached_late_output
+        assert chunks == [data if output == "pty" else "a"]
+        if output == "stdout":
+            assert handle.stdout == "a"
+        elif output == "stderr":
+            assert handle.stderr == "a"
+    finally:
+        await handle.disconnect()
+
+
+async def test_async_disconnect_allows_active_callback_to_finish():
+    callback_started = asyncio.Event()
+    release_callback = asyncio.Event()
+    callback_finished = asyncio.Event()
+    closed = asyncio.Event()
+    chunks = []
+
+    async def events():
+        try:
+            yield _stdout_event(b"a")
+            yield _stdout_event(b"late")
+            yield _end_event()
+        finally:
+            await asyncio.sleep(0)
+            closed.set()
+
+    async def on_stdout(chunk: str):
+        chunks.append(chunk)
+        callback_started.set()
+        await release_callback.wait()
+        callback_finished.set()
+
+    handle = AsyncCommandHandle(
+        pid=1, handle_kill=_kill, events=events(), on_stdout=on_stdout
+    )
+    try:
+        await asyncio.wait_for(callback_started.wait(), timeout=1)
+        await asyncio.wait_for(handle.disconnect(), timeout=1)
+        assert closed.is_set()
+        assert not callback_finished.is_set()
+        release_callback.set()
+        await asyncio.wait_for(asyncio.shield(handle._wait), timeout=1)
+        assert callback_finished.is_set()
+        assert chunks == ["a"]
+    finally:
+        release_callback.set()
+        await handle.disconnect()
 
 
 def test_sync_has_no_background_subscription():
