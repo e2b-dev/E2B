@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from types import TracebackType
 from typing import (
+    Any,
     NamedTuple,
     Optional,
     Protocol,
@@ -17,6 +18,7 @@ from httpx import AsyncBaseTransport, BaseTransport, Timeout
 from pyqwest import Proxy
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.models.error import Error
 from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig, ProxyTypes
@@ -187,6 +189,48 @@ def api_exception_from_code(
         err.status_code = status_code
 
     return err
+
+
+def is_api_not_found_error(error: object) -> bool:
+    """
+    Whether a parsed API error body reports a missing resource (HTTP 404)
+    rather than a route-level request validation failure.
+
+    An API without the route also answers 404 with an error body whose
+    message begins with ``validation error:``.
+    """
+    return (
+        isinstance(error, Error)
+        and error.code == 404
+        and not (
+            isinstance(error.message, str)
+            and error.message.startswith("validation error:")
+        )
+    )
+
+
+def is_api_not_found_response(res: Response[Any]) -> bool:
+    """
+    Whether an API response reports a missing resource (HTTP 404) rather than
+    a route-level validation error or non-JSON 404. Falls back to parsing
+    ``res.content`` for endpoints whose OpenAPI spec omits a 404 schema.
+    """
+    if res.status_code != 404:
+        return False
+    if res.parsed is not None:
+        return is_api_not_found_error(res.parsed)
+    try:
+        body = json.loads(res.content) if res.content else None
+    except json.JSONDecodeError:
+        return False
+    return (
+        isinstance(body, dict)
+        and body.get("code") == 404
+        and not (
+            isinstance(body.get("message"), str)
+            and body["message"].startswith("validation error:")
+        )
+    )
 
 
 def handle_api_exception(

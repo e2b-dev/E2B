@@ -1,4 +1,10 @@
-import { ApiClient, apiErrorFromCode, components, handleApiError } from '../api'
+import {
+  ApiClient,
+  apiErrorFromCode,
+  components,
+  handleApiError,
+  isApiNotFoundError,
+} from '../api'
 import {
   ClientFactory,
   ConnectionConfig,
@@ -1562,7 +1568,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       return false
     }
 
@@ -1599,7 +1605,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1709,7 +1715,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1765,7 +1771,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1804,7 +1810,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1844,7 +1850,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1912,7 +1918,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -2109,9 +2115,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    // check the status, not the parsed error body — openapi-fetch leaves
-    // `error` unset for non-2xx responses with an empty body
-    if (res.response.status === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(
         res.error?.message ?? `Sandbox ${sandboxId} not found`
       )
@@ -2177,7 +2181,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
       throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 

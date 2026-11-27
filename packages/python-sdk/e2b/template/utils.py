@@ -11,7 +11,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
 
-from e2b.api.client.models import Error
+from e2b.api import is_api_not_found_error
 from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 from e2b_dockerfile_utils import PatternMatcher
@@ -115,11 +115,7 @@ def is_template_not_found(error: object) -> bool:
 
     :param error: Parsed body of the API response
     """
-    return (
-        isinstance(error, Error)
-        and error.code == 404
-        and not error.message.startswith("validation error:")
-    )
+    return is_api_not_found_error(error)
 
 
 def normalize_build_arguments(

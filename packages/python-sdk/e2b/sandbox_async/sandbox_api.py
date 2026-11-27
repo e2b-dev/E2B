@@ -7,6 +7,7 @@ from e2b.api import (
     SandboxCreateResponse,
     api_exception_from_code,
     handle_api_exception,
+    is_api_not_found_error,
 )
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
@@ -120,7 +121,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
@@ -152,7 +153,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             return False
 
         if res.status_code >= 300:
@@ -180,7 +181,7 @@ class SandboxApi(SandboxBase):
             body=SandboxTimeoutRequest(timeout=timeout),
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
@@ -202,7 +203,7 @@ class SandboxApi(SandboxBase):
             body=build_network_update_body(network),
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
@@ -311,7 +312,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
@@ -360,7 +361,7 @@ class SandboxApi(SandboxBase):
             ),
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
@@ -411,7 +412,7 @@ class SandboxApi(SandboxBase):
             ),
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code == 409:
@@ -449,10 +450,10 @@ class SandboxApi(SandboxBase):
             ),
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             message = (
                 res.parsed.message
-                if isinstance(res.parsed, Error)
+                if isinstance(res.parsed, Error) and res.parsed.message
                 else f"Sandbox {sandbox_id} not found"
             )
             raise SandboxNotFoundException(message)
@@ -516,7 +517,7 @@ class SandboxApi(SandboxBase):
             ),
         )
 
-        if res.status_code == 404:
+        if res.status_code == 404 and is_api_not_found_error(res.parsed):
             raise SandboxNotFoundException(f"Paused sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:

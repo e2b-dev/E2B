@@ -7,7 +7,12 @@ import httpx
 from pyqwest import HTTPTransport
 from pyqwest.httpx import AsyncPyqwestTransport
 
-from e2b.api import encode_path_param, handle_api_exception, proxy_to_config
+from e2b.api import (
+    encode_path_param,
+    handle_api_exception,
+    is_api_not_found_response,
+    proxy_to_config,
+)
 from e2b.io_utils import aiter_io_chunks
 from e2b.api.client.api.templates import (
     post_v3_templates,
@@ -514,7 +519,7 @@ async def delete_template(
         client=client,
     )
 
-    if res.status_code == 404:
+    if is_api_not_found_response(res):
         return False
 
     if res.status_code >= 300:

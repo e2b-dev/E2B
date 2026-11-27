@@ -550,7 +550,7 @@ export async function deleteTemplate(
     signal,
   })
 
-  if (res.response.status === 404) {
+  if (res.response.status === 404 && isTemplateNotFound(res.error)) {
     return false
   }
 
