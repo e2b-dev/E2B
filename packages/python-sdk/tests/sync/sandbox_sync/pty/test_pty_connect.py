@@ -13,14 +13,14 @@ def test_connect_to_pty(sandbox_factory):
 
     terminal = sandbox.pty.create(PtySize(80, 24), envs={"FOO": "bar"})
 
-    sandbox.pty.send_stdin(terminal.pid, b"echo $FOO\n")
+    sandbox.pty.send_input(terminal.pid, b"echo $FOO\n")
 
     terminal.disconnect()
 
     # Now connect again, with a new on_pty handler
     reconnect_handle = sandbox.pty.connect(terminal.pid)
 
-    sandbox.pty.send_stdin(terminal.pid, b"echo $FOO\nexit\n")
+    sandbox.pty.send_input(terminal.pid, b"echo $FOO\nexit\n")
 
     result = reconnect_handle.wait(on_pty=lambda x: append_data(output, x))
 

@@ -104,11 +104,15 @@ class AsyncCommandHandle(Generic[OutputT]):
         ] = None,
         check_health: Optional[Callable[[], Awaitable[Optional[bool]]]] = None,
         retain_output: bool = True,
+        handle_send_input: Optional[
+            Callable[[Union[str, bytes], Optional[float]], Coroutine[Any, Any, None]]
+        ] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
         self._handle_send_stdin = handle_send_stdin
         self._handle_close_stdin = handle_close_stdin
+        self._handle_send_input = handle_send_input
         self._check_health = check_health
         self._events = events
 
@@ -304,10 +308,37 @@ class AsyncCommandHandle(Generic[OutputT]):
         :param request_timeout: Timeout for the request in **seconds**
         """
         if self._handle_send_stdin is None:
+            if self._handle_send_input is not None:
+                raise SandboxException(
+                    "PTY handles have no stdin, use send_input() to send input to the PTY instead."
+                )
             raise SandboxException(
                 "Sending stdin is not supported for this command handle."
             )
         await self._handle_send_stdin(data, request_timeout)
+
+    async def send_input(
+        self,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Send input to the PTY.
+
+        Only available on handles returned by `sandbox.pty.create()` and `sandbox.pty.connect()`.
+
+        :param data: Input data to send, `str` is encoded as UTF-8
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        if self._handle_send_input is None:
+            if self._handle_send_stdin is not None:
+                raise SandboxException(
+                    "Sending input is only supported for PTY handles, use send_stdin() to send data to the command stdin instead."
+                )
+            raise SandboxException(
+                "Sending input is not supported for this command handle."
+            )
+        await self._handle_send_input(data, request_timeout)
 
     async def close_stdin(self, request_timeout: Optional[float] = None) -> None:
         """
