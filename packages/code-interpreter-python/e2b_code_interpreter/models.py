@@ -36,6 +36,30 @@ OutputHandlerWithAsync = Union[
 
 logger = logging.getLogger(__name__)
 
+# Keys the kernel attaches to a result message that describe the message
+# rather than a representation. They are not MIME types and must not be
+# swept into `Result.extra` (the JS SDK excludes them too).
+_RESULT_METADATA_KEYS = frozenset({"plain"})
+
+# Standard representations `Result` carries as attributes, as opposed to the
+# non-standard MIME types collected in `extra`.
+_STANDARD_RESULT_KEYS = frozenset(
+    {
+        "text",
+        "html",
+        "markdown",
+        "svg",
+        "png",
+        "jpeg",
+        "pdf",
+        "latex",
+        "json",
+        "javascript",
+        "data",
+        "chart",
+    }
+)
+
 
 @dataclass
 class OutputMessage:
@@ -179,7 +203,17 @@ class Result:
                     f"Error deserializing chart, check if you are using the latest version of the library: {e}"
                 )
         self.is_main_result = is_main_result
-        self.extra = extra
+        # Collect non-standard MIME types (e.g. application/vnd.plotly.v1+json)
+        # into `extra`, matching the JS SDK's Result constructor, which sweeps
+        # every key outside its known set into `extra`. Without this the
+        # kernel's non-standard representations are silently dropped. `plain`
+        # is human-readable metadata the kernel attaches to the message, not a
+        # representation, and the JS SDK excludes it as well.
+        if kwargs:
+            swept = {k: v for k, v in kwargs.items() if k not in _RESULT_METADATA_KEYS}
+            self.extra = {**(extra or {}), **swept} if swept or extra else None
+        else:
+            self.extra = extra
 
     def formats(self) -> Iterable[str]:
         """
@@ -340,6 +374,10 @@ class Logs:
 def serialize_results(results: List[Result]) -> List[Dict[str, str]]:
     """
     Serializes the results to JSON.
+
+    Non-standard MIME types are emitted under an ``extra`` key, matching the JS
+    SDK's ``Result.toJSON()``. Nesting them keeps an arbitrary kernel MIME key
+    from shadowing a standard representation such as ``html``.
     """
     serialized = []
     for result in results:
@@ -349,9 +387,12 @@ def serialize_results(results: List[Result]) -> List[Dict[str, str]]:
                 chart = result.chart
                 if chart is not None:
                     serialized_dict[key] = chart.to_dict()
-            else:
+            elif key in _STANDARD_RESULT_KEYS and result[key] is not None:
                 serialized_dict[key] = result[key]
+            # Non-standard keys are serialized below under `extra`.
 
+        if result.extra:
+            serialized_dict["extra"] = dict(result.extra)
         serialized_dict["text"] = result.text
         serialized.append(serialized_dict)
 
