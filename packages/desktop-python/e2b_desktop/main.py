@@ -550,7 +550,9 @@ class Sandbox(SandboxBase):
 
         :param file_or_url: The file or URL to open.
         """
-        handle = self.commands.run(f"xdg-open {file_or_url}", background=True)
+        handle = self.commands.run(
+            f"xdg-open {quote_string(file_or_url)}", background=True
+        )
         handle.disconnect()
 
     def get_current_window_id(self) -> str:
@@ -579,7 +581,8 @@ class Sandbox(SandboxBase):
         """
         Launch an application.
         """
-        handle = self.commands.run(
-            f"gtk-launch {application} {uri or ''}", background=True, timeout=0
-        )
+        args = quote_string(application)
+        if uri:
+            args += f" {quote_string(uri)}"
+        handle = self.commands.run(f"gtk-launch {args}", background=True, timeout=0)
         handle.disconnect()

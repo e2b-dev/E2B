@@ -471,9 +471,12 @@ export class Sandbox extends SandboxBase {
    * @param fileOrUrl - The file or URL to open.
    */
   async open(fileOrUrl: string): Promise<void> {
-    const handle = await this.commands.run(`xdg-open ${fileOrUrl}`, {
-      background: true,
-    })
+    const handle = await this.commands.run(
+      `xdg-open ${this.quoteString(fileOrUrl)}`,
+      {
+        background: true,
+      }
+    )
     await handle.disconnect()
   }
 
@@ -516,13 +519,13 @@ export class Sandbox extends SandboxBase {
    * @param uri - The URI to open in the application.
    */
   async launch(application: string, uri?: string): Promise<void> {
-    const handle = await this.commands.run(
-      `gtk-launch ${application} ${uri ?? ''}`,
-      {
-        background: true,
-        timeoutMs: 0,
-      }
-    )
+    const args = uri
+      ? `${this.quoteString(application)} ${this.quoteString(uri)}`
+      : this.quoteString(application)
+    const handle = await this.commands.run(`gtk-launch ${args}`, {
+      background: true,
+      timeoutMs: 0,
+    })
     await handle.disconnect()
   }
 
