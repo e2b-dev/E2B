@@ -85,3 +85,12 @@ def test_volume_request_timeout_in_args():
 def test_volume_request_timeout_zero_disables_timeout():
     config = VolumeConnectionConfig(request_timeout=0)
     assert config.request_timeout is None
+
+
+def test_volume_disabled_timeout_survives_the_api_params_round_trip():
+    """The volume clients rebuild the config from these params: 0 keeps the timeout disabled there too."""
+    config = VolumeConnectionConfig(request_timeout=0)
+    params = config.get_api_params()
+    assert params["request_timeout"] == 0
+    assert VolumeConnectionConfig(**params).request_timeout is None
+    assert config.get_api_params(request_timeout=15)["request_timeout"] == 15

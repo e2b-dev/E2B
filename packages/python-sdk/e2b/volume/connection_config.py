@@ -149,13 +149,18 @@ class VolumeConnectionConfig:
         if headers is not None:
             req_headers.update(headers)
 
+        # 0, not None, for a disabled timeout: see e2b.connection_config.ConnectionConfig.get_api_params
+        timeout = self.get_request_timeout(request_timeout)
+        if timeout is None:
+            timeout = 0
+
         return dict(
             VolumeApiParams(
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
                 token=token if token is not None else self.token,
                 api_url=api_url if api_url is not None else self.api_url,
-                request_timeout=self.get_request_timeout(request_timeout),
+                request_timeout=timeout,
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
                 http_version=(

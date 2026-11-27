@@ -421,6 +421,12 @@ class ConnectionConfig:
             )
             self._apply_user_agent(req_headers, per_call_user_agent)
 
+        # A disabled timeout (request_timeout=0) is reported as 0: None in these params means "not provided", so the
+        # ConnectionConfig an instance control-plane method rebuilds from them would restore the 60 s default.
+        timeout = self.get_request_timeout(request_timeout)
+        if timeout is None:
+            timeout = 0
+
         # `logger` is a construction-time option rather than a per-request
         # ApiParams field, but it must propagate to the throwaway
         # ConnectionConfig that instance control-plane methods (kill, pause,
@@ -438,7 +444,7 @@ class ConnectionConfig:
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
-                request_timeout=self.get_request_timeout(request_timeout),
+                request_timeout=timeout,
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
                 sandbox_url=(
