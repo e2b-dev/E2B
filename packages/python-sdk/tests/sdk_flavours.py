@@ -12,6 +12,7 @@ class Sdk:
 
     is_async: bool
     Sandbox: Any
+    Secret: Any
     Template: Any
     Volume: Any
 

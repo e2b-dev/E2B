@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Unpack
 
-from e2b.api import handle_api_exception
+from e2b.api import encode_path_param, handle_api_exception
 from e2b.api.client.api.secrets import (
     delete_secrets_secret_id,
     get_secrets,
@@ -150,7 +150,7 @@ class Secret(SecretBase):
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = post_secrets_secret_id.sync_detailed(
-            secret,
+            encode_path_param(secret, "secret"),
             client=api_client,
             body=SecretUpdateModel(
                 value=value,
@@ -185,7 +185,7 @@ class Secret(SecretBase):
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = get_secrets_secret_id.sync_detailed(
-            secret,
+            encode_path_param(secret, "secret"),
             client=api_client,
         )
 
@@ -257,7 +257,7 @@ class Secret(SecretBase):
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = delete_secrets_secret_id.sync_detailed(
-            secret,
+            encode_path_param(secret, "secret"),
             client=api_client,
         )
 
