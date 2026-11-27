@@ -10,6 +10,7 @@ from e2b import (
 )
 from e2b.api.client_async import get_transport
 
+from e2b_code_interpreter._timeouts import _request_deadline
 from e2b_code_interpreter.constants import (
     DEFAULT_TEMPLATE,
     JUPYTER_PORT,
@@ -217,21 +218,12 @@ class AsyncSandbox(BaseAsyncSandbox):
                 },
                 headers=headers,
                 # `timeout` bounds the execution, `request_timeout` only the
-                # connect. Every non-connect phase must carry `timeout`: the
-                # SDK's pyqwest-backed transport collapses the per-phase
-                # timeouts into a single whole-request deadline and takes the
-                # longest of them, so leaving `request_timeout` on the write
-                # and pool phases would raise the floor to
-                # `max(timeout, request_timeout)` and silently ignore any
-                # `timeout` shorter than it. This matches the JS SDK, which
-                # aborts the execution on a `timeout`-long timer.
-                # `timeout=0` disables the deadline entirely; the transport
-                # still bounds connect on its own.
-                timeout=(
-                    httpx.Timeout(timeout, connect=request_timeout)
-                    if timeout is not None
-                    else httpx.Timeout(None)
-                ),
+                # connect. The transport derives the whole-request deadline
+                # from the read and write phases (see `_request_deadline`),
+                # so this must be built as `read + write == timeout`. This
+                # matches the JS SDK, which aborts the execution on a
+                # `timeout`-long timer.
+                timeout=_request_deadline(timeout, request_timeout),
             ) as response:
                 err = await aextract_exception(response)
                 if err:
@@ -294,7 +286,13 @@ class AsyncSandbox(BaseAsyncSandbox):
                 f"{self._jupyter_url}/contexts",
                 headers=headers,
                 json=data,
-                timeout=request_timeout or self.connection_config.request_timeout,
+                # `request_timeout=0` must stay 0: `or` would silently swap it
+                # for the default and re-enable the deadline.
+                timeout=_request_deadline(
+                    request_timeout
+                    if request_timeout is not None
+                    else self.connection_config.request_timeout
+                ),
             )
 
             err = await aextract_exception(response)
@@ -334,7 +332,7 @@ class AsyncSandbox(BaseAsyncSandbox):
             response = await self._client.delete(
                 f"{self._jupyter_url}/contexts/{context_id}",
                 headers=headers,
-                timeout=self.connection_config.request_timeout,
+                timeout=_request_deadline(self.connection_config.request_timeout),
             )
 
             err = await aextract_exception(response)
@@ -364,7 +362,7 @@ class AsyncSandbox(BaseAsyncSandbox):
             response = await self._client.get(
                 f"{self._jupyter_url}/contexts",
                 headers=headers,
-                timeout=self.connection_config.request_timeout,
+                timeout=_request_deadline(self.connection_config.request_timeout),
             )
 
             err = await aextract_exception(response)
@@ -403,7 +401,7 @@ class AsyncSandbox(BaseAsyncSandbox):
             response = await self._client.post(
                 f"{self._jupyter_url}/contexts/{context_id}/restart",
                 headers=headers,
-                timeout=self.connection_config.request_timeout,
+                timeout=_request_deadline(self.connection_config.request_timeout),
             )
 
             err = await aextract_exception(response)
