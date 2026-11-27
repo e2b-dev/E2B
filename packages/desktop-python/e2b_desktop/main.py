@@ -1,5 +1,6 @@
 import logging
 import time
+from contextlib import suppress
 from re import search as re_search
 from shlex import quote as quote_string
 from typing import (
@@ -380,9 +381,13 @@ class Sandbox(SandboxBase):
         """
         screenshot_path = f"/tmp/screenshot-{uuid4()}.png"
 
-        self.commands.run(f"scrot --pointer {screenshot_path}")
-
-        file = self.files.read(screenshot_path, format=format)
+        try:
+            self.commands.run(f"scrot --pointer {screenshot_path}")
+            file = self.files.read(screenshot_path, format=format)
+        except BaseException:
+            with suppress(Exception):
+                self.files.remove(screenshot_path)
+            raise
         self.files.remove(screenshot_path)
         return file
 
