@@ -16,7 +16,7 @@ from http import HTTPStatus
 
 import httpx
 
-from e2b.api import handle_api_exception
+from e2b.api import encode_path_param, handle_api_exception
 from e2b.api.client.api.volumes import (
     post_volumes,
     get_volumes,
@@ -208,7 +208,7 @@ class AsyncVolume(ClientFactory):
 
         api_client = get_core_api_client(config)
         res = await get_volumes_volume_id.asyncio_detailed(
-            volume_id,
+            encode_path_param(volume_id, "volume_id"),
             client=api_client,
         )
 
@@ -272,7 +272,7 @@ class AsyncVolume(ClientFactory):
 
         api_client = get_core_api_client(config)
         res = await delete_volumes_volume_id.asyncio_detailed(
-            volume_id,
+            encode_path_param(volume_id, "volume_id"),
             client=api_client,
         )
 
@@ -300,7 +300,7 @@ class AsyncVolume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = await get_dir.asyncio_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             depth=depth if depth is not None else UNSET,
             client=api_client,
@@ -349,7 +349,7 @@ class AsyncVolume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = await post_dir.asyncio_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
@@ -405,7 +405,7 @@ class AsyncVolume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = await get_path.asyncio_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             client=api_client,
         )
@@ -456,7 +456,7 @@ class AsyncVolume(ClientFactory):
         )
 
         res = await patch_path.asyncio_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             body=body,
             client=api_client,
@@ -668,7 +668,7 @@ class AsyncVolume(ClientFactory):
             raise ValueError(f"Unsupported data type: {type(data)}")
 
         res = await put_file.asyncio_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             body=FilePayload(payload=content),  # type: ignore[arg-type]  # httpx accepts bytes and streamable content directly
             path=path,
             uid=uid if uid is not None else UNSET,
@@ -707,7 +707,7 @@ class AsyncVolume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = await delete_path.asyncio_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             client=api_client,
         )

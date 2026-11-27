@@ -6,6 +6,7 @@ from packaging.version import Version
 from e2b.api import (
     SandboxCreateResponse,
     api_exception_from_code,
+    encode_path_param,
     handle_api_exception,
 )
 from e2b.api.client.api.sandboxes import (
@@ -116,7 +117,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = get_sandboxes_sandbox_id.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
         )
 
@@ -148,7 +149,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = delete_sandboxes_sandbox_id.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
         )
 
@@ -175,7 +176,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_timeout.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
             body=SandboxTimeoutRequest(timeout=timeout),
         )
@@ -197,7 +198,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = put_sandboxes_sandbox_id_network.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
             body=build_network_update_body(network),
         )
@@ -299,7 +300,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = get_sandboxes_sandbox_id_metrics.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             start=int(start.timestamp()) if start else UNSET,
             end=int(end.timestamp()) if end else UNSET,
             client=api_client,
@@ -347,7 +348,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = post_v_2_sandboxes_sandbox_id_connect.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
             body=ConnectSandboxV2(
                 timeout=timeout if timeout is not None else UNSET,
@@ -385,7 +386,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_fork.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
             body=SandboxForkRequest(
                 timeout=timeout if timeout is not None else UNSET,
@@ -447,7 +448,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_snapshots.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
             body=SandboxSnapshotRequest(
                 name=name if name else UNSET,
@@ -498,7 +499,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_pause.sync_detailed(
-            sandbox_id,
+            encode_path_param(sandbox_id, "sandbox_id"),
             client=api_client,
             body=SandboxPauseRequest(
                 memory=memory,

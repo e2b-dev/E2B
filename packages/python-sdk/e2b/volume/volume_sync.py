@@ -15,7 +15,7 @@ from http import HTTPStatus
 
 import httpx
 
-from e2b.api import handle_api_exception
+from e2b.api import encode_path_param, handle_api_exception
 from e2b.api.client.api.volumes import (
     post_volumes,
     get_volumes,
@@ -207,7 +207,7 @@ class Volume(ClientFactory):
 
         api_client = get_core_api_client(config)
         res = get_volumes_volume_id.sync_detailed(
-            volume_id,
+            encode_path_param(volume_id, "volume_id"),
             client=api_client,
         )
 
@@ -271,7 +271,7 @@ class Volume(ClientFactory):
 
         api_client = get_core_api_client(config)
         res = delete_volumes_volume_id.sync_detailed(
-            volume_id,
+            encode_path_param(volume_id, "volume_id"),
             client=api_client,
         )
 
@@ -299,7 +299,7 @@ class Volume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = get_dir.sync_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             depth=depth if depth is not None else UNSET,
             client=api_client,
@@ -348,7 +348,7 @@ class Volume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = post_dir.sync_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             uid=uid if uid is not None else UNSET,
             gid=gid if gid is not None else UNSET,
@@ -404,7 +404,7 @@ class Volume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = get_path.sync_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             client=api_client,
         )
@@ -455,7 +455,7 @@ class Volume(ClientFactory):
         )
 
         res = patch_path.sync_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             body=body,
             client=api_client,
@@ -640,7 +640,7 @@ class Volume(ClientFactory):
             raise ValueError(f"Unsupported data type: {type(data)}")
 
         res = put_file.sync_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             body=FilePayload(payload=content),  # type: ignore[arg-type]  # httpx accepts bytes and streamable content directly
             path=path,
             uid=uid if uid is not None else UNSET,
@@ -679,7 +679,7 @@ class Volume(ClientFactory):
         api_client = get_volume_api_client(config)
 
         res = delete_path.sync_detailed(
-            self._volume_id,
+            encode_path_param(self._volume_id, "volume_id"),
             path=path,
             client=api_client,
         )

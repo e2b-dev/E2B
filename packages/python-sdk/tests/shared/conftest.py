@@ -2,7 +2,16 @@ from typing import Any, Dict, Iterator
 
 import pytest
 
-from e2b import AsyncSandbox, AsyncTemplate, AsyncVolume, Sandbox, Template, Volume
+from e2b import (
+    AsyncSandbox,
+    AsyncSecret,
+    AsyncTemplate,
+    AsyncVolume,
+    Sandbox,
+    Secret,
+    Template,
+    Volume,
+)
 from recording_backend import RecordingBackend, start_recording_backend
 from sdk_flavours import Sdk, result
 
@@ -11,8 +20,8 @@ from sdk_flavours import Sdk, result
 def sdk(request) -> Sdk:
     """Runs a test once against each flavour of the SDK."""
     if request.param == "sync":
-        return Sdk(False, Sandbox, Template, Volume)
-    return Sdk(True, AsyncSandbox, AsyncTemplate, AsyncVolume)
+        return Sdk(False, Sandbox, Secret, Template, Volume)
+    return Sdk(True, AsyncSandbox, AsyncSecret, AsyncTemplate, AsyncVolume)
 
 
 @pytest.fixture
