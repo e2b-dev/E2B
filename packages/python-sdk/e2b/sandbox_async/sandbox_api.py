@@ -204,6 +204,10 @@ class SandboxApi(SandboxBase):
         )
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
+        if config.debug:
+            # Skip setting the paused retention in debug mode
+            return
+
         api_client = get_api_client(config)
         res = await put_sandboxes_sandbox_id_paused_retention.asyncio_detailed(
             sandbox_id,

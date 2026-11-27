@@ -644,6 +644,11 @@ export class Sandbox extends SandboxApi {
     retentionMs: number | null,
     opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
   ) {
+    if (this.connectionConfig.debug) {
+      // Skip setting the paused retention in debug mode
+      return
+    }
+
     await SandboxApi.setPausedRetention(
       this.sandboxId,
       retentionMs,

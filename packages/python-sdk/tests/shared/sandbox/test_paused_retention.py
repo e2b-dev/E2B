@@ -86,12 +86,17 @@ VALID_RETENTIONS = [
     pytest.param(3_153_600_000, id="100-years"),
 ]
 
-# Below 1 hour, above 100 years, or not a whole number of seconds.
-INVALID_RETENTIONS = [
+# The allowed range (1 hour to 100 years) is the API's to enforce, so values
+# outside it go out unchanged and the API answers.
+OUT_OF_RANGE_RETENTIONS = [
     pytest.param(3_599, id="below-min"),
     pytest.param(3_153_600_001, id="above-max"),
     pytest.param(0, id="zero"),
     pytest.param(-3_600, id="negative"),
+]
+
+# Not a whole number of seconds.
+INVALID_RETENTIONS = [
     pytest.param(3_600.5, id="fraction"),
     pytest.param(3_600.0, id="float"),
     pytest.param("3600", id="string"),
@@ -123,6 +128,32 @@ async def test_async_create_sends_paused_retention(
 
     assert body["pausedRetentionSeconds"] == paused_retention
     assert body["autoPause"] is True
+
+
+@pytest.mark.parametrize("paused_retention", OUT_OF_RANGE_RETENTIONS)
+def test_create_sends_out_of_range_paused_retention_unchanged(
+    monkeypatch, test_api_key, paused_retention
+):
+    body = _sync_create_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": "pause", "paused_retention": paused_retention},
+    )
+
+    assert body["pausedRetentionSeconds"] == paused_retention
+
+
+@pytest.mark.parametrize("paused_retention", OUT_OF_RANGE_RETENTIONS)
+async def test_async_create_sends_out_of_range_paused_retention_unchanged(
+    monkeypatch, test_api_key, paused_retention
+):
+    body = await _async_create_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": "pause", "paused_retention": paused_retention},
+    )
+
+    assert body["pausedRetentionSeconds"] == paused_retention
 
 
 @pytest.mark.parametrize(
@@ -177,6 +208,12 @@ SET_CASES = [
     pytest.param(DAY, {"pausedRetentionSeconds": DAY}, id="set"),
     # The removal must reach the API as an explicit null, not a missing key.
     pytest.param(None, {"pausedRetentionSeconds": None}, id="remove"),
+    *(
+        pytest.param(
+            case.values[0], {"pausedRetentionSeconds": case.values[0]}, id=case.id
+        )
+        for case in OUT_OF_RANGE_RETENTIONS
+    ),
 ]
 
 
@@ -266,6 +303,32 @@ async def test_async_set_paused_retention_rejects_invalid_values(
         await AsyncSandbox.set_paused_retention(
             SANDBOX_ID, paused_retention, api_key=test_api_key
         )
+
+    assert requests == []
+
+
+def test_set_paused_retention_debug_makes_no_request(monkeypatch, test_api_key):
+    requests = _mock_api(monkeypatch)
+
+    Sandbox.set_paused_retention(SANDBOX_ID, DAY, api_key=test_api_key, debug=True)
+    sandbox = Sandbox.create(api_key=test_api_key, debug=True)
+    sandbox.set_paused_retention(DAY)
+    sandbox.set_paused_retention(None)
+
+    assert requests == []
+
+
+async def test_async_set_paused_retention_debug_makes_no_request(
+    monkeypatch, test_api_key
+):
+    requests = _mock_api(monkeypatch)
+
+    await AsyncSandbox.set_paused_retention(
+        SANDBOX_ID, DAY, api_key=test_api_key, debug=True
+    )
+    sandbox = await AsyncSandbox.create(api_key=test_api_key, debug=True)
+    await sandbox.set_paused_retention(DAY)
+    await sandbox.set_paused_retention(None)
 
     assert requests == []
 

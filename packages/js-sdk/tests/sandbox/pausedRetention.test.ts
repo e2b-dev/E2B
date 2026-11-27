@@ -80,19 +80,17 @@ test('create omits the paused retention when it is not set', async () => {
   expect(lastCreateBody).not.toHaveProperty('pausedRetentionSeconds')
 })
 
-// Below 1 hour, above 100 years, not whole seconds, or not a finite number.
-const invalidRetentions = [
-  3_599_000,
-  3_153_600_001_000,
+// Not whole seconds, or not a finite number: these cannot be converted to the
+// seconds the API takes.
+const unconvertibleRetentions = [
   3_600_500,
-  0,
-  -3_600_000,
+  1,
   Number.NaN,
   Number.POSITIVE_INFINITY,
   '3600000',
 ]
 
-test.for(invalidRetentions)(
+test.for(unconvertibleRetentions)(
   'create rejects a paused retention of %o before calling the API',
   async (pausedRetentionMs) => {
     await expect(
@@ -109,9 +107,33 @@ test.for(invalidRetentions)(
   }
 )
 
+// The allowed range (1 hour to 100 years) is the API's to enforce, so values
+// outside it go out unchanged and the API answers.
+const outOfRangeRetentions = [
+  [3_599_000, 3599],
+  [0, 0],
+  [-3_600_000, -3600],
+  [3_153_600_001_000, 3_153_600_001],
+] as const
+
+test.for(outOfRangeRetentions)(
+  'create sends an out-of-range paused retention of %i ms as %i seconds',
+  async ([pausedRetentionMs, seconds]) => {
+    await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      lifecycle: { onTimeout: 'pause', pausedRetentionMs },
+    })
+
+    expect(lastCreateBody?.pausedRetentionSeconds).toBe(seconds)
+  }
+)
+
 test.for([
   [DAY_MS, '{"pausedRetentionSeconds":86400}'],
   [null, '{"pausedRetentionSeconds":null}'],
+  ...outOfRangeRetentions.map(
+    ([ms, seconds]) => [ms, `{"pausedRetentionSeconds":${seconds}}`] as const
+  ),
 ] as const)(
   'Sandbox.setPausedRetention(%o) sends %s',
   async ([retentionMs, body]) => {
@@ -133,7 +155,7 @@ test('sandbox.setPausedRetention sets the retention of that sandbox', async () =
   expect(lastRetentionBody).toBe('{"pausedRetentionSeconds":null}')
 })
 
-test.for([...invalidRetentions, undefined])(
+test.for([...unconvertibleRetentions, undefined])(
   'setPausedRetention rejects %o before calling the API',
   async (retentionMs) => {
     await expect(
@@ -146,6 +168,30 @@ test.for([...invalidRetentions, undefined])(
   }
 )
 
+test('Sandbox.setPausedRetention makes no request in debug mode', async () => {
+  // onUnhandledRequest: 'error' fails any request to the debug API URL; the
+  // body check covers the mocked production URL.
+  await Sandbox.setPausedRetention(sandboxId, DAY_MS, {
+    apiKey: TEST_API_KEY,
+    debug: true,
+  })
+
+  expect(lastRetentionBody).toBeUndefined()
+})
+
+test('sandbox.setPausedRetention makes no request in debug mode', async () => {
+  const sandbox = await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    debug: true,
+  })
+
+  await sandbox.setPausedRetention(DAY_MS)
+  await sandbox.setPausedRetention(null)
+
+  expect(lastCreateBody).toBeUndefined()
+  expect(lastRetentionBody).toBeUndefined()
+})
+
 test('setPausedRetention throws SandboxNotFoundError for an unknown sandbox', async () => {
   server.use(
     http.put(apiUrl(`/sandboxes/${sandboxId}/paused-retention`), () =>
@@ -153,6 +199,20 @@ test('setPausedRetention throws SandboxNotFoundError for an unknown sandbox', as
         { code: 404, message: 'sandbox not found' },
         { status: 404 }
       )
+    )
+  )
+
+  await expect(
+    Sandbox.setPausedRetention(sandboxId, DAY_MS, { apiKey: TEST_API_KEY })
+  ).rejects.toThrowError(SandboxNotFoundError)
+})
+
+test('setPausedRetention throws SandboxNotFoundError for an empty-bodied 404', async () => {
+  // openapi-fetch leaves `error` unset when a non-2xx response has no body.
+  server.use(
+    http.put(
+      apiUrl(`/sandboxes/${sandboxId}/paused-retention`),
+      () => new HttpResponse(null, { status: 404 })
     )
   )
 

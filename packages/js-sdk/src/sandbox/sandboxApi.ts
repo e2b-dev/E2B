@@ -631,8 +631,8 @@ export type SandboxLifecycle = {
    * kill. Leave unset to keep the sandbox until it is deleted explicitly.
    * Change it later with {@link SandboxApi.setPausedRetention}.
    *
-   * @throws {@link InvalidArgumentError} if the value is outside the range or
-   * not a whole number of seconds.
+   * @throws {@link InvalidArgumentError} if the value is not a whole number of
+   * seconds. The API refuses a value outside the range.
    *
    * @example
    * ```ts
@@ -662,14 +662,10 @@ export type SandboxInfoLifecycle = {
   pausedRetentionMs?: number
 }
 
-/** Shortest paused retention the API accepts: 1 hour. */
-const PAUSED_RETENTION_MIN_MS = 3_600_000
-/** Longest paused retention the API accepts: 100 years of 365 days. */
-const PAUSED_RETENTION_MAX_MS = 3_153_600_000_000
-
 /**
  * Convert a paused retention in milliseconds to the whole seconds the API
- * takes, refusing values the API would reject before any request is made.
+ * takes. The allowed range is the API's to enforce; only a value that does not
+ * convert to whole seconds is refused here.
  */
 function pausedRetentionToSeconds(field: string, retentionMs: number): number {
   if (
@@ -679,14 +675,6 @@ function pausedRetentionToSeconds(field: string, retentionMs: number): number {
   ) {
     throw new InvalidArgumentError(
       `${field} must be a whole number of seconds, in milliseconds (got ${formatRetention(retentionMs)}).`
-    )
-  }
-  if (
-    retentionMs < PAUSED_RETENTION_MIN_MS ||
-    retentionMs > PAUSED_RETENTION_MAX_MS
-  ) {
-    throw new InvalidArgumentError(
-      `${field} must be between ${PAUSED_RETENTION_MIN_MS} (1 hour) and ${PAUSED_RETENTION_MAX_MS} (100 years) milliseconds (got ${formatRetention(retentionMs)}).`
     )
   }
   return retentionMs / 1000
@@ -1863,8 +1851,10 @@ export class SandboxApi extends ClientFactory {
    * `null` to remove it.
    * @param opts connection options.
    *
-   * @throws {@link InvalidArgumentError} if `retentionMs` is outside the range
-   * or not a whole number of seconds.
+   * @throws {@link InvalidArgumentError} if `retentionMs` is not a whole number
+   * of seconds.
+   * @throws {@link SandboxError} with `statusCode` 400 if `retentionMs` is
+   * outside the range.
    * @throws {@link SandboxNotFoundError} if the sandbox does not exist.
    * @throws {@link SandboxError} with `statusCode` 409 while the sandbox is
    * changing state (pausing or resuming); retry once it settles.
@@ -1887,6 +1877,12 @@ export class SandboxApi extends ClientFactory {
 
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
+
+    if (config.debug) {
+      // Skip setting the paused retention in debug mode
+      return
+    }
+
     const client = new ApiClient(config)
 
     const res = await client.api.PUT(
@@ -1902,7 +1898,9 @@ export class SandboxApi extends ClientFactory {
       }
     )
 
-    if (res.error?.code === 404) {
+    // Checked on the status: openapi-fetch leaves `error` unset for a
+    // non-2xx response with an empty body.
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 

@@ -748,8 +748,8 @@ class SandboxLifecycle(TypedDict):
     **seconds**, from 1 hour (``3_600``) to 100 years (``3_153_600_000``). The
     clock restarts every time a run of the sandbox ends, by pause or by kill.
     Leave unset to keep the sandbox until it is deleted explicitly. Change it
-    later with ``set_paused_retention()``. A value outside the range raises
-    `InvalidArgumentException`.
+    later with ``set_paused_retention()``. A value that is not an ``int`` raises
+    `InvalidArgumentException`; the API refuses a value outside the range.
 
     Example::
 
@@ -781,27 +781,13 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
-PAUSED_RETENTION_MIN_SECONDS = 3_600
-"""Shortest paused retention the API accepts: 1 hour."""
-
-PAUSED_RETENTION_MAX_SECONDS = 3_153_600_000
-"""Longest paused retention the API accepts: 100 years of 365 days."""
-
-
 def validate_paused_retention(field: str, paused_retention: Any) -> int:
-    """Refuse a paused retention the API would reject, before any request is made."""
+    """Refuse a paused retention that is not a whole number of seconds. The
+    allowed range is the API's to enforce."""
     # bool is an int subclass; True would otherwise pass as one second.
     if not isinstance(paused_retention, int) or isinstance(paused_retention, bool):
         raise InvalidArgumentException(
             f"{field} must be a whole number of seconds (got {paused_retention!r})."
-        )
-    if not (
-        PAUSED_RETENTION_MIN_SECONDS <= paused_retention <= PAUSED_RETENTION_MAX_SECONDS
-    ):
-        raise InvalidArgumentException(
-            f"{field} must be between {PAUSED_RETENTION_MIN_SECONDS} (1 hour) and "
-            f"{PAUSED_RETENTION_MAX_SECONDS} (100 years) seconds "
-            f"(got {paused_retention!r})."
         )
     return paused_retention
 

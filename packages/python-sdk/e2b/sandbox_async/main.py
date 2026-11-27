@@ -692,6 +692,24 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param paused_retention: Paused retention in **seconds**, from 1 hour
             (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+        :param api_key: E2B API key to use for authentication, defaults to ``E2B_API_KEY`` environment variable
+        :param api_headers: Additional headers to send with E2B API requests
+        :param headers: Additional headers to send with the request (deprecated, use ``api_headers``)
+        :param domain: E2B domain to use, defaults to ``E2B_DOMAIN`` environment variable
+        :param debug: Debug mode, defaults to ``E2B_DEBUG`` environment variable; the call does nothing in debug mode
+        :param request_timeout: Timeout for the request in **seconds**, defaults to 60 seconds
+        :param retries: Number of control-plane retries for retryable responses, defaults to 3
+        :param proxy: Proxy to use for the request
+        :param http_version: HTTP version for the request, defaults to ``E2B_HTTP_VERSION`` environment variable or ``"2"``
+        :param api_url: URL to use for the API (deprecated, for internal use only)
+        :param sandbox_url: URL to connect to the sandbox (deprecated)
+        :param validate_api_key: Deprecated, has no effect
+
+        :raises InvalidArgumentException: If ``paused_retention`` is not an ``int``.
+        :raises SandboxNotFoundException: If the sandbox does not exist.
+        :raises SandboxException: With status 400 if ``paused_retention`` is outside
+            the range, and with status 409 while the sandbox is changing state
+            (pausing or resuming); retry once it settles.
         """
         ...
 
@@ -712,10 +730,11 @@ class AsyncSandbox(SandboxApi):
         :param paused_retention: Paused retention in **seconds**, from 1 hour
             (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
 
-        :raises InvalidArgumentException: If ``paused_retention`` is outside the range.
+        :raises InvalidArgumentException: If ``paused_retention`` is not an ``int``.
         :raises SandboxNotFoundException: If the sandbox does not exist.
-        :raises SandboxException: With status 409 while the sandbox is changing
-            state (pausing or resuming); retry once it settles.
+        :raises SandboxException: With status 400 if ``paused_retention`` is outside
+            the range, and with status 409 while the sandbox is changing state
+            (pausing or resuming); retry once it settles.
 
         Example::
 
