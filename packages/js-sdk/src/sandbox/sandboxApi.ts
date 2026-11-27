@@ -3,7 +3,7 @@ import {
   apiErrorFromCode,
   components,
   handleApiError,
-  isApiNotFoundError,
+  isRouteValidationError,
 } from '../api'
 import {
   ClientFactory,
@@ -1568,7 +1568,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       return false
     }
 
@@ -1605,7 +1605,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1715,7 +1715,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1771,7 +1771,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1810,7 +1810,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1850,7 +1850,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1918,7 +1918,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -2115,7 +2115,9 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    // Check HTTP status rather than only res.error because openapi-fetch leaves
+    // res.error undefined on an empty-body 404.
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(
         res.error?.message ?? `Sandbox ${sandboxId} not found`
       )
@@ -2181,7 +2183,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    if (res.response.status === 404 && isApiNotFoundError(res.error)) {
+    if (res.response.status === 404 && !isRouteValidationError(res.error)) {
       throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 

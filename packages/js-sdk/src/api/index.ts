@@ -54,21 +54,13 @@ export function apiErrorFromCode(
 }
 
 /**
- * Whether a parsed API error body reports a missing resource (HTTP 404)
- * rather than a route-level request validation failure.
- *
- * An API without the route also answers 404 with an error body whose
- * message begins with `validation error:`.
+ * Whether a parsed API error body is a route-level request validation failure
+ * (e.g. a misconfigured `apiUrl` hitting an unknown route, where the API's
+ * OpenAPI validator replies 404 with `validation error: ...`).
  */
-export function isApiNotFoundError(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) {
-    return false
-  }
-  const { code, message } = error as { code?: unknown; message?: unknown }
-  return (
-    code === 404 &&
-    !(typeof message === 'string' && message.startsWith('validation error:'))
-  )
+export function isRouteValidationError(error: unknown): boolean {
+  const message = (error as { message?: unknown } | undefined)?.message
+  return typeof message === 'string' && message.startsWith('validation error:')
 }
 
 export function handleApiError(

@@ -191,46 +191,35 @@ def api_exception_from_code(
     return err
 
 
-def is_api_not_found_error(error: object) -> bool:
+def is_route_validation_error(error: Any) -> bool:
     """
-    Whether a parsed API error body reports a missing resource (HTTP 404)
-    rather than a route-level request validation failure.
-
-    An API without the route also answers 404 with an error body whose
-    message begins with ``validation error:``.
+    Whether a parsed API error body is a route-level request validation failure
+    (e.g. a misconfigured ``api_url`` hitting an unknown route, where the API's
+    OpenAPI validator replies 404 with ``validation error: ...``).
     """
-    return (
-        isinstance(error, Error)
-        and error.code == 404
-        and not (
-            isinstance(error.message, str)
-            and error.message.startswith("validation error:")
-        )
+    message = (
+        error.message
+        if isinstance(error, Error)
+        else error.get("message")
+        if isinstance(error, dict)
+        else None
     )
+    return isinstance(message, str) and message.startswith("validation error:")
 
 
-def is_api_not_found_response(res: Response[Any]) -> bool:
+def is_route_validation_response(res: Response[Any]) -> bool:
     """
-    Whether an API response reports a missing resource (HTTP 404) rather than
-    a route-level validation error or non-JSON 404. Falls back to parsing
-    ``res.content`` for endpoints whose OpenAPI spec omits a 404 schema.
+    Whether an API response is a route-level request validation failure. Falls
+    back to parsing ``res.content`` for endpoints whose OpenAPI spec omits a
+    404 schema.
     """
-    if res.status_code != 404:
-        return False
     if res.parsed is not None:
-        return is_api_not_found_error(res.parsed)
+        return is_route_validation_error(res.parsed)
     try:
         body = json.loads(res.content) if res.content else None
     except json.JSONDecodeError:
         return False
-    return (
-        isinstance(body, dict)
-        and body.get("code") == 404
-        and not (
-            isinstance(body.get("message"), str)
-            and body["message"].startswith("validation error:")
-        )
-    )
+    return is_route_validation_error(body)
 
 
 def handle_api_exception(
@@ -239,9 +228,11 @@ def handle_api_exception(
     stack_trace: Optional[TracebackType] = None,
 ):
     try:
-        body = json.loads(e.content) if e.content else {}
+        decoded = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
-        body = {}
+        decoded = {}
+
+    body = decoded if isinstance(decoded, dict) else {}
 
     message = body.get("message")
     if body.get("error_code") == GuestUnresponsiveException.code:

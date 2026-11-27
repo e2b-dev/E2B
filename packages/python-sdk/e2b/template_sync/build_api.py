@@ -10,7 +10,7 @@ from pyqwest.httpx import PyqwestTransport
 from e2b.api import (
     encode_path_param,
     handle_api_exception,
-    is_api_not_found_response,
+    is_route_validation_response,
     proxy_to_config,
 )
 from e2b.api.client.api.templates import (
@@ -513,7 +513,7 @@ def delete_template(client: AuthenticatedClient, template_id_or_name: str) -> bo
         client=client,
     )
 
-    if is_api_not_found_response(res):
+    if res.status_code == 404 and not is_route_validation_response(res):
         return False
 
     if res.status_code >= 300:

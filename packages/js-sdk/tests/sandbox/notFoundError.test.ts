@@ -17,21 +17,14 @@ function errorResponse(sandboxId: unknown) {
         { code: 404, message: "Sandbox doesn't exist" },
         { status: 404 }
       )
+    case 'empty-404':
+      return new HttpResponse(null, { status: 404, statusText: 'Not Found' })
     case 'wrong-route':
       return HttpResponse.json(
         {
           code: 404,
           message: 'validation error: no matching operation was found',
         },
-        { status: 404 }
-      )
-    case 'no-such-route':
-      return new HttpResponse('404 page not found', { status: 404 })
-    case 'empty-404':
-      return new HttpResponse(null, { status: 404, statusText: 'Not Found' })
-    case 'gateway-not-found':
-      return HttpResponse.json(
-        { code: 5, message: 'Not Found' },
         { status: 404 }
       )
     case 'http-500-with-404-code':
@@ -101,11 +94,14 @@ const throwingMethods: Array<
 ]
 
 describe.each(throwingMethods)('Sandbox.%s', (_, call) => {
-  test('throws SandboxNotFoundError when the sandbox does not exist', async () => {
-    const error = await call('missing').catch((err) => err)
+  test.each(['missing', 'empty-404'])(
+    'throws SandboxNotFoundError for %s',
+    async (sandboxId) => {
+      const error = await call(sandboxId).catch((err) => err)
 
-    expect(error).toBeInstanceOf(SandboxNotFoundError)
-  })
+      expect(error).toBeInstanceOf(SandboxNotFoundError)
+    }
+  )
 
   test.each([
     [
@@ -113,9 +109,6 @@ describe.each(throwingMethods)('Sandbox.%s', (_, call) => {
       404,
       '404: validation error: no matching operation was found',
     ],
-    ['no-such-route', 404, '404: 404 page not found'],
-    ['empty-404', 404, '404: Not Found'],
-    ['gateway-not-found', 404, '404: Not Found'],
     ['http-500-with-404-code', 500, '500: downstream sandbox not found'],
   ])(
     'throws generic SandboxError for %s',
@@ -131,9 +124,12 @@ describe.each(throwingMethods)('Sandbox.%s', (_, call) => {
 })
 
 describe('Sandbox.kill', () => {
-  test('returns false when the sandbox does not exist', async () => {
-    await expect(Sandbox.kill('missing', opts)).resolves.toBe(false)
-  })
+  test.each(['missing', 'empty-404'])(
+    'returns false for %s',
+    async (sandboxId) => {
+      await expect(Sandbox.kill(sandboxId, opts)).resolves.toBe(false)
+    }
+  )
 
   test.each([
     [
@@ -141,9 +137,6 @@ describe('Sandbox.kill', () => {
       404,
       '404: validation error: no matching operation was found',
     ],
-    ['no-such-route', 404, '404: 404 page not found'],
-    ['empty-404', 404, '404: Not Found'],
-    ['gateway-not-found', 404, '404: Not Found'],
     ['http-500-with-404-code', 500, '500: downstream sandbox not found'],
   ])(
     'throws generic SandboxError for %s',
@@ -159,9 +152,14 @@ describe('Sandbox.kill', () => {
 })
 
 describe('Sandbox.deleteSnapshot', () => {
-  test('returns false when the snapshot does not exist', async () => {
-    await expect(Sandbox.deleteSnapshot('missing', opts)).resolves.toBe(false)
-  })
+  test.each(['missing', 'empty-404'])(
+    'returns false for %s',
+    async (snapshotId) => {
+      await expect(Sandbox.deleteSnapshot(snapshotId, opts)).resolves.toBe(
+        false
+      )
+    }
+  )
 
   test.each([
     [
@@ -169,9 +167,6 @@ describe('Sandbox.deleteSnapshot', () => {
       404,
       '404: validation error: no matching operation was found',
     ],
-    ['no-such-route', 404, '404: 404 page not found'],
-    ['empty-404', 404, '404: Not Found'],
-    ['gateway-not-found', 404, '404: Not Found'],
     ['http-500-with-404-code', 500, '500: downstream sandbox not found'],
   ])('throws TemplateError for %s', async (snapshotId, statusCode, message) => {
     const error = await Sandbox.deleteSnapshot(snapshotId, opts).catch(

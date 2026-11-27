@@ -8,22 +8,35 @@ from urllib.parse import urlsplit
 import pytest
 
 from e2b import AsyncSandbox, Sandbox
+from e2b.api import handle_api_exception
 from e2b.exceptions import (
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
 )
 
-ERRORS: Dict[str, Tuple[int, Dict[str, Any]]] = {
-    "missing": (404, {"code": 404, "message": "Sandbox doesn't exist"}),
+ERRORS: Dict[str, Tuple[int, bytes, str]] = {
+    "missing": (
+        404,
+        json.dumps({"code": 404, "message": "Sandbox doesn't exist"}).encode(),
+        "application/json",
+    ),
+    "empty-404": (404, b"", "text/plain"),
+    "json-string-404": (404, json.dumps("Not Found").encode(), "application/json"),
     "wrong-route": (
         404,
-        {"code": 404, "message": "validation error: no matching operation was found"},
+        json.dumps(
+            {
+                "code": 404,
+                "message": "validation error: no matching operation was found",
+            }
+        ).encode(),
+        "application/json",
     ),
-    "gateway-not-found": (404, {"code": 5, "message": "Not Found"}),
     "http-500-with-404-code": (
         500,
-        {"code": 404, "message": "downstream sandbox not found"},
+        json.dumps({"code": 404, "message": "downstream sandbox not found"}).encode(),
+        "application/json",
     ),
 }
 
@@ -41,13 +54,19 @@ class _Api(BaseHTTPRequestHandler):
         pass
 
     def _respond(self):
-        sandbox_id = _extract_resource_id(self.path)
-        status, body = ERRORS.get(
-            sandbox_id, (500, {"code": 500, "message": "Unexpected sandbox_id in test"})
+        resource_id = _extract_resource_id(self.path)
+        status, encoded, content_type = ERRORS.get(
+            resource_id,
+            (
+                500,
+                json.dumps(
+                    {"code": 500, "message": "Unexpected resource_id in test"}
+                ).encode(),
+                "application/json",
+            ),
         )
-        encoded = json.dumps(body).encode()
         self.send_response(status)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
@@ -73,7 +92,7 @@ def api():
         server.server_close()
 
 
-async def _await_if_needed(value):
+async def _await_if_needed(value: Any) -> Any:
     return await value if inspect.isawaitable(value) else value
 
 
@@ -117,11 +136,10 @@ async def test_raises_sandbox_not_found_when_missing(sandbox_cls, api, call):
             404,
             "404: validation error: no matching operation was found",
         ),
-        ("gateway-not-found", 404, "404: Not Found"),
         ("http-500-with-404-code", 500, "500: downstream sandbox not found"),
     ],
 )
-async def test_raises_generic_sandbox_exception_for_other_404s(
+async def test_raises_generic_sandbox_exception_for_wrong_route(
     sandbox_cls, api, call, sandbox_id, status_code, message
 ):
     with pytest.raises(SandboxException) as error:
@@ -146,11 +164,10 @@ async def test_kill_returns_false_when_missing(sandbox_cls, api):
             404,
             "404: validation error: no matching operation was found",
         ),
-        ("gateway-not-found", 404, "404: Not Found"),
         ("http-500-with-404-code", 500, "500: downstream sandbox not found"),
     ],
 )
-async def test_kill_raises_generic_sandbox_exception_for_other_404s(
+async def test_kill_raises_generic_sandbox_exception_for_wrong_route(
     sandbox_cls, api, sandbox_id, status_code, message
 ):
     with pytest.raises(SandboxException) as error:
@@ -162,9 +179,12 @@ async def test_kill_raises_generic_sandbox_exception_for_other_404s(
 
 
 @pytest.mark.parametrize("sandbox_cls", SANDBOX_CLASSES)
-async def test_delete_snapshot_returns_false_when_missing(sandbox_cls, api):
+@pytest.mark.parametrize("snapshot_id", ["missing", "empty-404", "json-string-404"])
+async def test_delete_snapshot_returns_false_on_not_found(
+    sandbox_cls, api, snapshot_id
+):
     assert (
-        await _await_if_needed(sandbox_cls.delete_snapshot("missing", **api)) is False
+        await _await_if_needed(sandbox_cls.delete_snapshot(snapshot_id, **api)) is False
     )
 
 
@@ -177,11 +197,10 @@ async def test_delete_snapshot_returns_false_when_missing(sandbox_cls, api):
             404,
             "404: validation error: no matching operation was found",
         ),
-        ("gateway-not-found", 404, "404: Not Found"),
         ("http-500-with-404-code", 500, "500: downstream sandbox not found"),
     ],
 )
-async def test_delete_snapshot_raises_template_exception_for_other_404s(
+async def test_delete_snapshot_raises_template_exception_for_wrong_route(
     sandbox_cls, api, snapshot_id, status_code, message
 ):
     with pytest.raises(TemplateException) as error:
@@ -189,3 +208,17 @@ async def test_delete_snapshot_raises_template_exception_for_other_404s(
 
     assert error.value.status_code == status_code
     assert str(error.value) == message
+
+
+@pytest.mark.parametrize("content", [b'"Not Found"', b"null", b"[]"])
+def test_handle_api_exception_handles_non_dict_json_body(content):
+    class _Response:
+        status_code = 404
+
+        def __init__(self, raw: bytes):
+            self.content = raw
+
+    err = handle_api_exception(_Response(content), TemplateException)
+    assert isinstance(err, TemplateException)
+    assert err.status_code == 404
+    assert str(err) == f"404: {content}"

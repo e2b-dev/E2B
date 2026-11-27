@@ -4,7 +4,6 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 import { parse, type StackFrame } from 'error-stack-parser-es'
-import { isApiNotFoundError } from '../api'
 import { dynamicImport } from '../utils'
 import { InvalidArgumentError, TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
@@ -96,7 +95,7 @@ export function isTemplateNotFound(error?: {
   code?: number
   message?: string
 }): boolean {
-  return isApiNotFoundError(error)
+  return error?.code === 404 && !error.message?.startsWith('validation error:')
 }
 
 /**
