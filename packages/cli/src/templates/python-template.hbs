@@ -3,27 +3,27 @@ from e2b import {{#if isAsync}}AsyncTemplate{{else}}Template{{/if}}
 template = (
     {{#if isAsync}}AsyncTemplate{{else}}Template{{/if}}()
 {{#if fromImage}}
-    .from_image("{{{fromImage}}}")
+    .from_image("{{{escapeDoubleQuotes fromImage}}}")
 {{/if}}
 {{#each steps}}
 {{#eq type "WORKDIR"}}
-    .set_workdir("{{{args.[0]}}}")
+    .set_workdir("{{{escapeDoubleQuotes args.[0]}}}")
 {{/eq}}
 {{#eq type "USER"}}
-    .set_user("{{{args.[0]}}}")
+    .set_user("{{{escapeDoubleQuotes args.[0]}}}")
 {{/eq}}
 {{#eq type "ENV"}}
     .set_envs({
 {{#each envVars}}
-        "{{{@key}}}": "{{{this}}}",
+        "{{{escapeDoubleQuotes @key}}}": "{{{escapeDoubleQuotes this}}}",
 {{/each}}
     })
 {{/eq}}
 {{#eq type "RUN"}}
-    .run_cmd("{{{args.[0]}}}")
+    .run_cmd("{{{escapeDoubleQuotes args.[0]}}}")
 {{/eq}}
 {{#eq type "COPY"}}
-    .copy("{{{src}}}", "{{{dest}}}")
+    .copy("{{{escapeDoubleQuotes src}}}", "{{{escapeDoubleQuotes dest}}}")
 {{/eq}}
 {{/each}}
 {{#if startCmd}}
