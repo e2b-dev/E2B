@@ -1,8 +1,36 @@
 import type { Client } from '@connectrpc/connect'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { expect, test } from 'vitest'
 
 import { Process as ProcessService } from '../../../src/envd/process/process_pb'
+import { SandboxNotRunningError } from '../../../src/errors'
 import { CommandInputHandle } from '../../../src/sandbox/commands/inputHandle'
+
+test.each(['stdin', 'pty'] as const)(
+  'stream input rejects new %s data while diagnosing a failed stream',
+  async (kind) => {
+    const healthStarted = Promise.withResolvers<void>()
+    const healthResult = Promise.withResolvers<boolean>()
+    const rpc = {
+      async streamInput() {
+        throw new ConnectError('terminated', Code.Unknown)
+      },
+    } as unknown as Client<typeof ProcessService>
+    const input = new CommandInputHandle(rpc, 42, kind, {}, () => {
+      healthStarted.resolve()
+      return healthResult.promise
+    })
+
+    await healthStarted.promise
+    const send = input.send('late')
+    healthResult.resolve(false)
+
+    await Promise.all([
+      expect(send).rejects.toBeInstanceOf(SandboxNotRunningError),
+      expect(input.close()).rejects.toBeInstanceOf(SandboxNotRunningError),
+    ])
+  }
+)
 
 test('stream input preserves order and sends keepalives while idle', async () => {
   const messages: any[] = []

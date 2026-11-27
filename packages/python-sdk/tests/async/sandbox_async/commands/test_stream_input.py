@@ -1,8 +1,16 @@
 import asyncio
 
 import pytest
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 
-from e2b import AsyncSandbox, NotFoundException, SandboxException, TimeoutException
+from e2b import (
+    AsyncSandbox,
+    NotFoundException,
+    SandboxException,
+    SandboxNotRunningException,
+    TimeoutException,
+)
 from e2b.sandbox_async.commands.command_input_handle import AsyncCommandInputHandle
 
 
@@ -37,6 +45,33 @@ async def test_stream_input_timeout(async_sandbox: AsyncSandbox):
 
     with pytest.raises(TimeoutException):
         await stream.close()
+
+
+@pytest.mark.parametrize("kind", ["stdin", "pty"])
+async def test_async_command_input_handle_rejects_input_during_health_check(kind):
+    class FakeRpc:
+        async def stream_input(self, requests, timeout_ms=None):
+            raise ConnectError(Code.UNAVAILABLE, "stream reset")
+
+    health_started = asyncio.Event()
+    health_finished = asyncio.Event()
+
+    async def check_health():
+        health_started.set()
+        await health_finished.wait()
+        return False
+
+    stream = AsyncCommandInputHandle(FakeRpc(), 42, kind, 0, check_health)
+    await asyncio.wait_for(health_started.wait(), timeout=1)
+    send = asyncio.create_task(stream.send("late"))
+    await asyncio.sleep(0)
+    health_finished.set()
+
+    send_result, close_result = await asyncio.gather(
+        send, stream.close(), return_exceptions=True
+    )
+    assert isinstance(send_result, SandboxNotRunningException)
+    assert isinstance(close_result, SandboxNotRunningException)
 
 
 async def test_async_command_input_handle_orders_data_and_sends_keepalives():
