@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from e2b import FileNotFoundException, NotFoundException, AsyncSandbox
@@ -50,7 +52,13 @@ async def test_read_file_as_stream(async_sandbox: AsyncSandbox):
     assert read_content == content
 
 
-async def test_read_file_as_stream_with_gzip(async_sandbox: AsyncSandbox):
+async def test_read_procfs_file(async_sandbox: AsyncSandbox):
+    # envd serves procfs files (stat size 0) only on the gzip download path.
+    boot_id = await async_sandbox.files.read("/proc/sys/kernel/random/boot_id")
+    assert re.fullmatch(r"[0-9a-f-]{36}\n", boot_id)
+
+
+async def test_read_file_as_stream_with_deprecated_gzip(async_sandbox: AsyncSandbox):
     filename = "test_read_stream_gzip.txt"
     content = "Streamed gzipped read content. " * 10_000
 

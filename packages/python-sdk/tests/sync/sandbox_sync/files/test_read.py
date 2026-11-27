@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from e2b import FileNotFoundException, NotFoundException
 
@@ -44,7 +46,13 @@ def test_read_file_as_stream(sandbox):
     assert read_content == content
 
 
-def test_read_file_as_stream_with_gzip(sandbox):
+def test_read_procfs_file(sandbox):
+    # envd serves procfs files (stat size 0) only on the gzip download path.
+    boot_id = sandbox.files.read("/proc/sys/kernel/random/boot_id")
+    assert re.fullmatch(r"[0-9a-f-]{36}\n", boot_id)
+
+
+def test_read_file_as_stream_with_deprecated_gzip(sandbox):
     filename = "test_read_stream_gzip.txt"
     content = "Streamed gzipped read content. " * 10_000
 
