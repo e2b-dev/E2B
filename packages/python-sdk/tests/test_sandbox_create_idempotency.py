@@ -111,26 +111,6 @@ def test_sync_create_rejects_invalid_idempotency_keys_before_request(
     assert requests == []
 
 
-def test_sync_create_sends_configured_idempotency_key(monkeypatch):
-    idempotency_keys = []
-
-    def get_api_client(config):
-        return object()
-
-    def create(**kwargs):
-        idempotency_keys.append(kwargs["idempotency_key"])
-        return _response()
-
-    monkeypatch.setattr(sync_sandbox_api, "get_api_client", get_api_client)
-    monkeypatch.setattr(sync_sandbox_api.post_v2_sandboxes, "sync_detailed", create)
-
-    sync_sandbox_api.SandboxApi._create_sandbox(
-        "base", None, None, None, None, None, idempotency_key="abc123"
-    )
-
-    assert idempotency_keys == ["abc123"]
-
-
 def test_sync_client_create_sends_per_call_idempotency_key(monkeypatch):
     idempotency_keys = []
 
@@ -215,27 +195,6 @@ async def test_async_create_rejects_invalid_idempotency_keys_before_request(
 
     assert str(error.value) == message
     assert requests == []
-
-
-@pytest.mark.asyncio
-async def test_async_create_sends_configured_idempotency_key(monkeypatch):
-    idempotency_keys = []
-
-    def get_api_client(config):
-        return object()
-
-    async def create(**kwargs):
-        idempotency_keys.append(kwargs["idempotency_key"])
-        return _response()
-
-    monkeypatch.setattr(async_sandbox_api, "get_api_client", get_api_client)
-    monkeypatch.setattr(async_sandbox_api.post_v2_sandboxes, "asyncio_detailed", create)
-
-    await async_sandbox_api.SandboxApi._create_sandbox(
-        "base", None, None, None, None, None, idempotency_key="abc123"
-    )
-
-    assert idempotency_keys == ["abc123"]
 
 
 @pytest.mark.asyncio

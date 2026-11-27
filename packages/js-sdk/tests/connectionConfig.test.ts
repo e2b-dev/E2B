@@ -430,12 +430,6 @@ test('setupRequestController clearStartTimeout stops the handshake timer', async
   assert.equal(controller.signal.aborted, false)
 })
 
-test('setupRequestController handshake timer aborts when not cleared', async () => {
-  const { controller } = setupRequestController(20, undefined)
-  await new Promise((resolve) => setTimeout(resolve, 40))
-  assert.equal(controller.signal.aborted, true)
-})
-
 test('setupRequestController handshake timeout aborts with TimeoutError reason', async () => {
   const { controller } = setupRequestController(20, undefined)
   await new Promise((resolve) => setTimeout(resolve, 40))

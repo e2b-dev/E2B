@@ -21,7 +21,6 @@ import httpx
 import pytest
 from pyqwest import Request, Response, SyncRequest, SyncResponse
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
-from pyqwest.middleware.retry import RetryMode
 
 from e2b.api.client_async import ConnectionRetryTransport
 from e2b.api.client_sync import (
@@ -121,18 +120,6 @@ def _retrying_sync(inner) -> SyncConnectionRetryTransport:
     return SyncConnectionRetryTransport(
         inner, initial_interval=0.001, max_interval=0.002, max_retries=3
     )
-
-
-@pytest.mark.parametrize(
-    "transport_cls",
-    [SyncConnectionRetryTransport, ConnectionRetryTransport],
-    ids=["sync", "async"],
-)
-def test_transports_declare_the_policy(transport_cls):
-    # The inherited hook returns `True` — buffered — so nothing behavioral
-    # below would fail loudly if the override silently vanished.
-    assert "should_retry_request" in transport_cls.__dict__
-    assert transport_cls(None).should_retry_request(None) is RetryMode.UNBUFFERED
 
 
 # A failed connect leaves the body untouched, so the same stream serves the

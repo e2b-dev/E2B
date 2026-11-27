@@ -49,16 +49,6 @@ function neverProbe(): Promise<boolean | undefined> {
   throw new Error('health check should not run')
 }
 
-describe('Unavailable with the sandbox not found', () => {
-  test('returns SandboxNotRunningError, not SandboxNotFoundError, from every call', () => {
-    const err = handleRpcError(
-      new ConnectError('The sandbox was not found', Code.Unavailable)
-    )
-    assert.instanceOf(err, SandboxNotRunningError)
-    assert.notInstanceOf(err, SandboxNotFoundError)
-  })
-})
-
 describe('ambiguous Unavailable', () => {
   test('is an Unavailable that says neither not found nor port not open', () => {
     assert.isTrue(
@@ -148,6 +138,7 @@ describe('handleRpcError', () => {
   test('returns SandboxUnreachableError for Unavailable with the sandbox running but its port closed', () => {
     const err = handleRpcError(new ConnectError(PORT_CLOSED, Code.Unavailable))
     assert.instanceOf(err, SandboxUnreachableError)
+    assert.notInstanceOf(err, SandboxNotRunningError)
     assert.include(err.message, 'could not be reached')
   })
 
@@ -157,14 +148,9 @@ describe('handleRpcError', () => {
     )
     assert.instanceOf(err, SandboxNotRunningError)
     assert.instanceOf(err, TimeoutError)
+    assert.notInstanceOf(err, SandboxNotFoundError)
     assert.notInstanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'The sandbox was not found')
-  })
-
-  test('returns SandboxUnreachableError, not SandboxNotRunningError, for Unavailable with the port closed', () => {
-    const err = handleRpcError(new ConnectError(PORT_CLOSED, Code.Unavailable))
-    assert.instanceOf(err, SandboxUnreachableError)
-    assert.notInstanceOf(err, SandboxNotRunningError)
   })
 
   test('returns TimeoutError for Unavailable', () => {
@@ -202,19 +188,6 @@ describe('handleRpcErrorWithHealthCheck', () => {
     'Cloudflare Workers': 'Network connection lost.',
     Browser: 'network error',
   }
-
-  test('does not probe health on an Unavailable for the sandbox not found', async () => {
-    let probed = false
-    const err = await handleRpcErrorWithHealthCheck(
-      new ConnectError('The sandbox was not found', Code.Unavailable),
-      async () => {
-        probed = true
-        return true
-      }
-    )
-    assert.isFalse(probed)
-    assert.instanceOf(err, SandboxNotRunningError)
-  })
 
   test('returns a SandboxNotRunningError when the health check says the sandbox is not running', async () => {
     const original = terminated()
