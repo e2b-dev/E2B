@@ -622,6 +622,43 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * Set how long the sandbox may stay paused and unused before it is deleted,
+   * replacing the retention set on create or by an earlier call.
+   *
+   * For a paused sandbox the clock restarts: it is deleted `retentionMs` after
+   * this call, or never when the retention is removed. A running sandbox keeps
+   * the new retention for when its current run ends.
+   *
+   * @param retentionMs paused retention in **milliseconds**, a whole number of
+   * seconds from 1 hour (`3_600_000`) to 100 years (`3_153_600_000_000`), or
+   * `null` to remove it.
+   * @param opts connection options.
+   *
+   * @example
+   * ```ts
+   * await sandbox.setPausedRetention(24 * 3600_000) // delete after a day paused
+   * await sandbox.setPausedRetention(null) // keep it until deleted explicitly
+   * ```
+   */
+  async setPausedRetention(
+    retentionMs: number | null,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
+  ) {
+    // SandboxApi.setPausedRetention validates the value first and only then
+    // skips the request in debug mode, so a bad value throws either way. Only
+    // the per-call timeout and signal are passed on: any other field in `opts`
+    // (such as `debug`) would override the sandbox's own connection settings.
+    await SandboxApi.setPausedRetention(
+      this.sandboxId,
+      retentionMs,
+      this.resolveApiOpts({
+        requestTimeoutMs: opts?.requestTimeoutMs,
+        signal: opts?.signal,
+      })
+    )
+  }
+
+  /**
    * Update the network configuration of the sandbox.
    *
    * Replaces the current egress configuration atomically — fields that are

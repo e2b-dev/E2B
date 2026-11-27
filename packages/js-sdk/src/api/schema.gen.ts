@@ -513,6 +513,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/paused-retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the paused sandbox retention
+         * @description Replace the sandbox's paused retention (pausedRetentionSeconds); null removes it. For a paused sandbox the clock restarts: expiresAt becomes the time of the request plus the new retention, or null when the retention is removed. A running sandbox keeps the new retention for when its current run ends.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SandboxPausedRetentionRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully set the paused sandbox retention */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/refreshes": {
         parameters: {
             query?: never;
@@ -3363,8 +3412,18 @@ export interface components {
             endAt: string;
             envdUnresponsiveAtPause?: components["schemas"]["EnvdUnresponsiveAtPause"];
             envdVersion: components["schemas"]["EnvdVersion"];
+            /**
+             * Format: date-time
+             * @description When the paused sandbox will be deleted. Null while the sandbox is running or pausing, and when no retention is set.
+             */
+            expiresAt: string | null;
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
+            /**
+             * Format: int64
+             * @description Seconds the sandbox may stay paused and unused before it is deleted. Null when no retention is set.
+             */
+            pausedRetentionSeconds: number | null;
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /**
@@ -3484,6 +3543,7 @@ export interface components {
             memoryMB?: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
+            pausedRetentionSeconds?: components["schemas"]["SandboxPausedRetentionSeconds"];
             /** @description Identifier of the required template */
             templateID: string;
             /**
@@ -3589,10 +3649,20 @@ export interface components {
             envdAccessToken?: string;
             envdUnresponsiveAtPause?: components["schemas"]["EnvdUnresponsiveAtPause"];
             envdVersion: components["schemas"]["EnvdVersion"];
+            /**
+             * Format: date-time
+             * @description When the paused sandbox will be deleted. Null while the sandbox is running or pausing, and when no retention is set.
+             */
+            expiresAt: string | null;
             lifecycle?: components["schemas"]["SandboxLifecycle"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
+            /**
+             * Format: int64
+             * @description Seconds the sandbox may stay paused and unused before it is deleted. Null when no retention is set.
+             */
+            pausedRetentionSeconds: number | null;
             pauseMode?: components["schemas"]["SandboxPauseMode"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
@@ -3810,6 +3880,14 @@ export interface components {
          * @enum {string}
          */
         SandboxOnTimeout: "kill" | "pause";
+        SandboxPausedRetentionRequest: {
+            pausedRetentionSeconds: components["schemas"]["SandboxPausedRetentionSeconds"];
+        };
+        /**
+         * Format: int64
+         * @description Seconds a paused sandbox may stay unused before it is deleted, from 1 hour to 100 years. The clock restarts every time a run of the sandbox ends, by pause or by kill. Null means the sandbox is never deleted automatically.
+         */
+        SandboxPausedRetentionSeconds: number | null;
         /**
          * @description What the sandbox's latest pause saved. `full` saved the filesystem and the memory, and resuming restores the sandbox where it left off. `filesystem` saved only the filesystem, and resuming reboots the sandbox from disk. Returned for a paused sandbox once its pause has finished, and omitted while it is still pausing.
          * @enum {string}

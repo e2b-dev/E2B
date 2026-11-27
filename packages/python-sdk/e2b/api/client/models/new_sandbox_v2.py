@@ -34,6 +34,9 @@ class NewSandboxV2:
                 snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with
                 autoResume. Defaults to true (full memory snapshot). Default: True.
             auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
+            paused_retention_seconds (Union[None, Unset, int]): Seconds a paused sandbox may stay unused before it is
+                deleted, from 1 hour to 100 years. The clock restarts every time a run of the sandbox ends, by pause or by kill.
+                Null means the sandbox is never deleted automatically.
             allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
                 the same as specifying denyOut to 0.0.0.0/0 in the network config.
             network (Union[Unset, SandboxNetworkConfig]):
@@ -52,6 +55,7 @@ class NewSandboxV2:
     auto_pause: Union[Unset, bool] = False
     auto_pause_memory: Union[Unset, bool] = True
     auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
+    paused_retention_seconds: Union[None, Unset, int] = UNSET
     allow_internet_access: Union[Unset, bool] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
     metadata: Union[Unset, Any] = UNSET
@@ -79,6 +83,12 @@ class NewSandboxV2:
         auto_resume: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.auto_resume, Unset):
             auto_resume = self.auto_resume.to_dict()
+
+        paused_retention_seconds: Union[None, Unset, int]
+        if isinstance(self.paused_retention_seconds, Unset):
+            paused_retention_seconds = UNSET
+        else:
+            paused_retention_seconds = self.paused_retention_seconds
 
         allow_internet_access = self.allow_internet_access
 
@@ -128,6 +138,8 @@ class NewSandboxV2:
             field_dict["autoPauseMemory"] = auto_pause_memory
         if auto_resume is not UNSET:
             field_dict["autoResume"] = auto_resume
+        if paused_retention_seconds is not UNSET:
+            field_dict["pausedRetentionSeconds"] = paused_retention_seconds
         if allow_internet_access is not UNSET:
             field_dict["allow_internet_access"] = allow_internet_access
         if network is not UNSET:
@@ -172,6 +184,17 @@ class NewSandboxV2:
             auto_resume = UNSET
         else:
             auto_resume = SandboxAutoResumeConfig.from_dict(_auto_resume)
+
+        def _parse_paused_retention_seconds(data: object) -> Union[None, Unset, int]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, int], data)
+
+        paused_retention_seconds = _parse_paused_retention_seconds(
+            d.pop("pausedRetentionSeconds", UNSET)
+        )
 
         allow_internet_access = d.pop("allow_internet_access", UNSET)
 
@@ -225,6 +248,7 @@ class NewSandboxV2:
             auto_pause=auto_pause,
             auto_pause_memory=auto_pause_memory,
             auto_resume=auto_resume,
+            paused_retention_seconds=paused_retention_seconds,
             allow_internet_access=allow_internet_access,
             network=network,
             metadata=metadata,

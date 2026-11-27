@@ -640,6 +640,27 @@ export type SandboxLifecycle = {
    * explicitly via `connect()`).
    */
   autoResume?: boolean
+
+  /**
+   * How long the sandbox may stay paused and unused before it is deleted, in
+   * **milliseconds**. Must be a whole number of seconds, from 1 hour
+   * (`3_600_000`) to 100 years (`3_153_600_000_000`).
+   *
+   * The clock restarts every time a run of the sandbox ends, by pause or by
+   * kill. Leave unset to keep the sandbox until it is deleted explicitly.
+   * Change it later with {@link SandboxApi.setPausedRetention}.
+   *
+   * @throws {@link InvalidArgumentError} if the value is not a whole number of
+   * seconds. The API refuses a value outside the range.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({
+   *   lifecycle: { onTimeout: 'pause', pausedRetentionMs: 7 * 24 * 3600_000 },
+   * })
+   * ```
+   */
+  pausedRetentionMs?: number
 }
 
 export type SandboxInfoLifecycle = {
@@ -652,6 +673,34 @@ export type SandboxInfoLifecycle = {
    * Whether the sandbox can auto-resume.
    */
   autoResume: boolean
+
+  /**
+   * How long the sandbox may stay paused and unused before it is deleted, in
+   * milliseconds. Unset when the sandbox has no paused retention.
+   */
+  pausedRetentionMs?: number
+}
+
+/**
+ * Convert a paused retention in milliseconds to the whole seconds the API
+ * takes. The allowed range is the API's to enforce; only a value that does not
+ * convert to whole seconds is refused here.
+ */
+function pausedRetentionToSeconds(field: string, retentionMs: number): number {
+  if (
+    typeof retentionMs !== 'number' ||
+    !Number.isInteger(retentionMs) ||
+    retentionMs % 1000 !== 0
+  ) {
+    throw new InvalidArgumentError(
+      `${field} must be a whole number of seconds, in milliseconds (got ${formatRetention(retentionMs)}).`
+    )
+  }
+  return retentionMs / 1000
+}
+
+function formatRetention(value: unknown): string {
+  return typeof value === 'number' ? String(value) : JSON.stringify(value)
 }
 
 /**
@@ -1199,6 +1248,13 @@ export interface SandboxInfo {
    * {@link GuestUnresponsiveError}. Unset otherwise.
    */
   envdUnresponsiveAtPause?: boolean
+
+  /**
+   * When this paused sandbox will be deleted. Set only while the sandbox is
+   * paused and has a paused retention (see
+   * {@link SandboxLifecycle.pausedRetentionMs}); unset while it runs.
+   */
+  pausedExpiresAt?: Date
 }
 
 /**
@@ -1668,11 +1724,17 @@ export class SandboxApi extends ClientFactory {
         ? {
             onTimeout: res.data.lifecycle.onTimeout,
             autoResume: res.data.lifecycle.autoResume,
+            ...(res.data.pausedRetentionSeconds != null
+              ? { pausedRetentionMs: res.data.pausedRetentionSeconds * 1000 }
+              : {}),
           }
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
       envdUnresponsiveAtPause: res.data.envdUnresponsiveAtPause || undefined,
+      pausedExpiresAt: res.data.expiresAt
+        ? new Date(res.data.expiresAt)
+        : undefined,
     }
   }
 
@@ -1790,6 +1852,79 @@ export class SandboxApi extends ClientFactory {
     })
 
     if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
+  /**
+   * Set how long the specified sandbox may stay paused and unused before it is
+   * deleted, replacing the retention set on create or by an earlier call.
+   *
+   * For a paused sandbox the clock restarts: it is deleted `retentionMs` after
+   * this call, or never when the retention is removed. A running sandbox keeps
+   * the new retention for when its current run ends.
+   *
+   * @param sandboxId sandbox ID.
+   * @param retentionMs paused retention in **milliseconds**, a whole number of
+   * seconds from 1 hour (`3_600_000`) to 100 years (`3_153_600_000_000`), or
+   * `null` to remove it.
+   * @param opts connection options.
+   *
+   * @throws {@link InvalidArgumentError} if `retentionMs` is not a whole number
+   * of seconds.
+   * @throws {@link SandboxError} with `statusCode` 400 if `retentionMs` is
+   * outside the range.
+   * @throws {@link SandboxNotFoundError} if the sandbox does not exist.
+   * @throws {@link SandboxError} with `statusCode` 409 while the sandbox is
+   * changing state (pausing or resuming); retry once it settles.
+   */
+  static async setPausedRetention(
+    sandboxId: string,
+    retentionMs: number | null,
+    opts?: SandboxApiOpts
+  ): Promise<void> {
+    if (retentionMs === undefined) {
+      // The API requires the field; a missing value is a mistake, not a removal.
+      throw new InvalidArgumentError(
+        'retentionMs is required; pass null to remove the paused retention.'
+      )
+    }
+    const pausedRetentionSeconds =
+      retentionMs === null
+        ? null
+        : pausedRetentionToSeconds('retentionMs', retentionMs)
+
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+
+    if (config.debug) {
+      // Skip setting the paused retention in debug mode
+      return
+    }
+
+    const client = new ApiClient(config)
+
+    const res = await client.api.PUT(
+      '/sandboxes/{sandboxID}/paused-retention',
+      {
+        params: {
+          path: {
+            sandboxID: sandboxId,
+          },
+        },
+        body: { pausedRetentionSeconds },
+        signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+      }
+    )
+
+    // Checked on the status: openapi-fetch leaves `error` unset for a
+    // non-2xx response with an empty body.
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -2049,6 +2184,18 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
+    // A missing retention (or an explicit null from an untyped caller) is left
+    // out of the request: the sandbox then has none, which is what the API
+    // does with an omitted field.
+    const requestedRetentionMs = opts?.lifecycle?.pausedRetentionMs ?? undefined
+    const pausedRetentionSeconds =
+      requestedRetentionMs === undefined
+        ? undefined
+        : pausedRetentionToSeconds(
+            'lifecycle.pausedRetentionMs',
+            requestedRetentionMs
+          )
+
     // Built before the network config: `transform` callbacks are resolved
     // against the workload tokens this request registers.
     const iam = buildIamBody(opts?.iam)
@@ -2069,6 +2216,7 @@ export class SandboxApi extends ClientFactory {
       autoPauseMemory: action === 'pause' ? memory : undefined,
       autoResume:
         autoResume === undefined ? undefined : { enabled: autoResume },
+      pausedRetentionSeconds,
     }
 
     if (opts?.volumeMounts) {
@@ -2294,6 +2442,9 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
         envdUnresponsiveAtPause: sandbox.envdUnresponsiveAtPause || undefined,
+        pausedExpiresAt: sandbox.expiresAt
+          ? new Date(sandbox.expiresAt)
+          : undefined,
       })
     )
   }

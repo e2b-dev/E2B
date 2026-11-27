@@ -911,6 +911,18 @@ components:
         enabled:
           $ref: "#/components/schemas/SandboxAutoResumeEnabled"
 
+    SandboxPausedRetentionSeconds:
+      type: integer
+      format: int64
+      nullable: true
+      minimum: 3600
+      maximum: 3153600000
+      description: >-
+        Seconds a paused sandbox may stay unused before it is deleted, from 1
+        hour to 100 years. The clock restarts every time a run of the sandbox
+        ends, by pause or by kill. Null means the sandbox is never deleted
+        automatically.
+
     SandboxOnTimeout:
       type: string
       description: Action taken when the sandbox times out.
@@ -1144,6 +1156,8 @@ components:
         - endAt
         - state
         - envdVersion
+        - pausedRetentionSeconds
+        - expiresAt
       properties:
         templateID:
           type: string
@@ -1197,6 +1211,20 @@ components:
           $ref: "#/components/schemas/SandboxLifecycle"
         pauseMode:
           $ref: "#/components/schemas/SandboxPauseMode"
+        pausedRetentionSeconds:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            Seconds the sandbox may stay paused and unused before it is
+            deleted. Null when no retention is set.
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            When the paused sandbox will be deleted. Null while the sandbox is
+            running or pausing, and when no retention is set.
         volumeMounts:
           type: array
           items:
@@ -1260,6 +1288,8 @@ components:
         - endAt
         - state
         - envdVersion
+        - pausedRetentionSeconds
+        - expiresAt
       properties:
         templateID:
           type: string
@@ -1296,6 +1326,20 @@ components:
           $ref: "#/components/schemas/EnvdVersion"
         envdUnresponsiveAtPause:
           $ref: "#/components/schemas/EnvdUnresponsiveAtPause"
+        pausedRetentionSeconds:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            Seconds the sandbox may stay paused and unused before it is
+            deleted. Null when no retention is set.
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: >-
+            When the paused sandbox will be deleted. Null while the sandbox is
+            running or pausing, and when no retention is set.
         volumeMounts:
           type: array
           items:
@@ -1424,6 +1468,8 @@ components:
             be combined with autoResume. Defaults to true (full memory snapshot).
         autoResume:
           $ref: "#/components/schemas/SandboxAutoResumeConfig"
+        pausedRetentionSeconds:
+          $ref: "#/components/schemas/SandboxPausedRetentionSeconds"
         allow_internet_access:
           type: boolean
           description:
@@ -1587,6 +1633,14 @@ components:
             resumes the sandbox, and is ignored when another request is
             already resuming it. The response's cpuCount reports the count the
             sandbox runs with.
+
+    SandboxPausedRetentionRequest:
+      type: object
+      required:
+        - pausedRetentionSeconds
+      properties:
+        pausedRetentionSeconds:
+          $ref: "#/components/schemas/SandboxPausedRetentionSeconds"
 
     SandboxTimeoutRequest:
       type: object
@@ -2575,6 +2629,24 @@ components:
         public:
           type: boolean
           description: Whether the template is public
+        aliases:
+          type: array
+          description: Every alias of the template, in any namespace
+          items:
+            $ref: "#/components/schemas/AdminResolvedTemplateAlias"
+
+    AdminResolvedTemplateAlias:
+      required:
+        - alias
+        - namespace
+      properties:
+        alias:
+          type: string
+          description: The alias
+        namespace:
+          type: string
+          nullable: true
+          description: Namespace of the alias, or null for an alias that resolves for every team
 
     AdminTemplateAliasResolution:
       required:
@@ -2680,6 +2752,7 @@ components:
         - templateID
         - team
         - names
+        - aliases
         - public
         - createdAt
         - lastSpawnedAt
@@ -2699,6 +2772,12 @@ components:
           description: Names of the template (namespace/alias format when namespaced)
           items:
             type: string
+        aliases:
+          type: array
+          description: >
+            The template's aliases, those without a namespace first, then by namespace and alias
+          items:
+            $ref: "#/components/schemas/AdminTemplateAlias"
         public:
           type: boolean
           description: Whether the template is public
@@ -4633,6 +4712,12 @@ components:
             Whether new sandboxes without an explicit network.allowPublicTraffic
             accept traffic without a traffic access token. Omission uses the
             public default. Existing sandboxes, resumes and forks keep their settings.
+        defaultExposeLocalhostPorts:
+          type: boolean
+          description: >-
+            Whether new sandboxes without an explicit network.exposeLocalhostPorts
+            make services listening only on loopback reachable through sandbox URLs.
+            Omission exposes them. Existing sandboxes, resumes and forks keep their settings.
 
     ManagementProjectUpsertRequest:
       type: object
@@ -5967,6 +6052,48 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /sandboxes/{sandboxID}/paused-retention:
+    put:
+      summary: Set the paused sandbox retention
+      description: >-
+        Replace the sandbox's paused retention (pausedRetentionSeconds); null
+        removes it. For a paused sandbox the clock restarts: expiresAt becomes
+        the time of the request plus the new retention, or null when the
+        retention is removed. A running sandbox keeps the new retention for
+        when its current run ends.
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      tags: [sandboxes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SandboxPausedRetentionRequest"
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "204":
+          description: Successfully set the paused sandbox retention
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
         "429":
           $ref: "#/components/responses/429"
         "500":
@@ -8742,8 +8869,9 @@ paths:
       description: >
         For each name, reports the template that holds it as an alias without a namespace and the
         template that holds it in `namespace`, each with whether the template is public. A name no
-        template holds in that place answers null there. Deleted templates are left out. Names are
-        matched exactly and answered in the order given.
+        template holds in that place answers null there. Each template found also lists every alias
+        it has, in any namespace. Deleted templates are left out. Names are matched exactly and
+        answered in the order given.
       tags: [admin]
       security:
         - AdminApiKeyAuth: []
@@ -8887,8 +9015,8 @@ paths:
       description: >
         Resolves `query` as, in order: a build ID (a UUID, matched to the template of the build's
         newest assignment, with no fallback), a template ID, or a template name (`namespace/alias`,
-        or an alias without a namespace). Returns the template with its owning team and its newest
-        builds. Deleted templates are not found.
+        or an alias without a namespace). Returns the template with its owning team, its aliases
+        and its newest builds. Deleted templates are not found.
       tags: [admin]
       security:
         - AdminApiKeyAuth: []

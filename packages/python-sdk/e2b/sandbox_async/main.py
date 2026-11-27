@@ -655,6 +655,99 @@ class AsyncSandbox(SandboxApi):
         )
 
     @overload
+    async def set_paused_retention(
+        self,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set how long the sandbox may stay paused and unused before it is deleted,
+        replacing the retention set on create or by an earlier call.
+
+        For a paused sandbox the clock restarts: it is deleted `paused_retention`
+        seconds after this call, or never when the retention is removed. A running
+        sandbox keeps the new retention for when its current run ends.
+
+        :param paused_retention: Paused retention in **seconds**, from 1 hour
+            (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def set_paused_retention(
+        sandbox_id: str,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set how long the sandbox specified by sandbox ID may stay paused and unused
+        before it is deleted, replacing the retention set on create or by an earlier
+        call.
+
+        For a paused sandbox the clock restarts: it is deleted `paused_retention`
+        seconds after this call, or never when the retention is removed. A running
+        sandbox keeps the new retention for when its current run ends.
+
+        :param sandbox_id: Sandbox ID
+        :param paused_retention: Paused retention in **seconds**, from 1 hour
+            (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+        :param api_key: E2B API key to use for authentication, defaults to ``E2B_API_KEY`` environment variable
+        :param api_headers: Additional headers to send with E2B API requests
+        :param headers: Additional headers to send with the request (deprecated, use ``api_headers``)
+        :param domain: E2B domain to use, defaults to ``E2B_DOMAIN`` environment variable
+        :param debug: Debug mode, defaults to ``E2B_DEBUG`` environment variable; the call does nothing in debug mode
+        :param request_timeout: Timeout for the request in **seconds**, defaults to 60 seconds
+        :param retries: Number of control-plane retries for retryable responses, defaults to 3
+        :param proxy: Proxy to use for the request
+        :param http_version: HTTP version for the request, defaults to ``E2B_HTTP_VERSION`` environment variable or ``"2"``
+        :param api_url: URL to use for the API (deprecated, for internal use only)
+        :param sandbox_url: URL to connect to the sandbox (deprecated)
+        :param validate_api_key: Deprecated, has no effect
+
+        :raises InvalidArgumentException: If ``paused_retention`` is not an ``int``.
+        :raises SandboxNotFoundException: If the sandbox does not exist.
+        :raises SandboxException: With status 400 if ``paused_retention`` is outside
+            the range, and with status 409 while the sandbox is changing state
+            (pausing or resuming); retry once it settles.
+        """
+        ...
+
+    @class_method_variant("_cls_set_paused_retention")
+    async def set_paused_retention(
+        self,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set how long the sandbox may stay paused and unused before it is deleted,
+        replacing the retention set on create or by an earlier call.
+
+        For a paused sandbox the clock restarts: it is deleted `paused_retention`
+        seconds after this call, or never when the retention is removed. A running
+        sandbox keeps the new retention for when its current run ends.
+
+        :param paused_retention: Paused retention in **seconds**, from 1 hour
+            (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+
+        :raises InvalidArgumentException: If ``paused_retention`` is not an ``int``.
+        :raises SandboxNotFoundException: If the sandbox does not exist.
+        :raises SandboxException: With status 400 if ``paused_retention`` is outside
+            the range, and with status 409 while the sandbox is changing state
+            (pausing or resuming); retry once it settles.
+
+        Example::
+
+            await sandbox.set_paused_retention(24 * 3600)  # delete after a day paused
+            await sandbox.set_paused_retention(None)  # keep it until deleted explicitly
+        """
+        await SandboxApi._cls_set_paused_retention(
+            sandbox_id=self.sandbox_id,
+            paused_retention=paused_retention,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
     async def update_network(
         self,
         network: SandboxNetworkUpdate,
