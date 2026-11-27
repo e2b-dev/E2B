@@ -46,7 +46,7 @@ export const listCommand = new commander.Command('list')
   )
   .option(
     '-o, --order <order>',
-    'sort order by start time, asc or desc (default: desc)',
+    'sort by start time, asc or desc. By default, fetch the newest sandboxes and display the oldest first',
     zodParser(
       z.enum(['asc', 'desc'] as const satisfies readonly SandboxListOrder[], {
         error: "Invalid order, expected 'asc' or 'desc'.",
