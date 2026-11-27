@@ -1,11 +1,11 @@
 """The execution timeout must reach the transport as the request deadline.
 
-Regression test for the SDK's pyqwest-backed transport collapsing httpx's
-per-phase timeouts into a single whole-request deadline equal to the longest
-phase. With the previous `(request_timeout, timeout, request_timeout,
-request_timeout)` tuple that deadline came out as `max(timeout,
-request_timeout)`, so any `timeout` shorter than `request_timeout` was silently
-ignored and an execution ran on until `request_timeout` instead.
+The SDK's pyqwest-backed transport enforces the `read` phase of the request's
+`httpx.Timeout` as the whole-request deadline (see `e2b.deadline`). With the
+previous `(request_timeout, timeout, request_timeout, request_timeout)` tuple
+the transport's phase arithmetic came out as `max(timeout, request_timeout)`,
+so any `timeout` shorter than `request_timeout` was silently ignored and an
+execution ran on until `request_timeout` instead.
 """
 
 import httpx
