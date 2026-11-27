@@ -33,6 +33,10 @@ class SandboxDetail:
         memory_mb (int): Memory for the sandbox in MiB
         disk_size_mb (int): Disk size for the sandbox in MiB
         state (SandboxState): State of the sandbox
+        paused_retention_seconds (Union[None, int]): Seconds the sandbox may stay paused and unused before it is
+            deleted. Null when no retention is set.
+        expires_at (Union[None, datetime.datetime]): When the paused sandbox will be deleted. Null while the sandbox is
+            running or pausing, and when no retention is set.
         alias (Union[Unset, str]): Alias of the template
         envd_unresponsive_at_pause (Union[Unset, bool]): True when the snapshot a paused sandbox would resume from was
             taken while the sandbox guest agent was not responding. A plain resume of it is refused with 409 and error_code
@@ -63,6 +67,8 @@ class SandboxDetail:
     memory_mb: int
     disk_size_mb: int
     state: SandboxState
+    paused_retention_seconds: Union[None, int]
+    expires_at: Union[None, datetime.datetime]
     alias: Union[Unset, str] = UNSET
     envd_unresponsive_at_pause: Union[Unset, bool] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
@@ -95,6 +101,15 @@ class SandboxDetail:
         disk_size_mb = self.disk_size_mb
 
         state = self.state.value
+
+        paused_retention_seconds: Union[None, int]
+        paused_retention_seconds = self.paused_retention_seconds
+
+        expires_at: Union[None, str]
+        if isinstance(self.expires_at, datetime.datetime):
+            expires_at = self.expires_at.isoformat()
+        else:
+            expires_at = self.expires_at
 
         alias = self.alias
 
@@ -149,6 +164,8 @@ class SandboxDetail:
                 "memoryMB": memory_mb,
                 "diskSizeMB": disk_size_mb,
                 "state": state,
+                "pausedRetentionSeconds": paused_retention_seconds,
+                "expiresAt": expires_at,
             }
         )
         if alias is not UNSET:
@@ -200,6 +217,30 @@ class SandboxDetail:
         disk_size_mb = d.pop("diskSizeMB")
 
         state = SandboxState(d.pop("state"))
+
+        def _parse_paused_retention_seconds(data: object) -> Union[None, int]:
+            if data is None:
+                return data
+            return cast(Union[None, int], data)
+
+        paused_retention_seconds = _parse_paused_retention_seconds(
+            d.pop("pausedRetentionSeconds")
+        )
+
+        def _parse_expires_at(data: object) -> Union[None, datetime.datetime]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                expires_at_type_0 = isoparse(data)
+
+                return expires_at_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, datetime.datetime], data)
+
+        expires_at = _parse_expires_at(d.pop("expiresAt"))
 
         alias = d.pop("alias", UNSET)
 
@@ -268,6 +309,8 @@ class SandboxDetail:
             memory_mb=memory_mb,
             disk_size_mb=disk_size_mb,
             state=state,
+            paused_retention_seconds=paused_retention_seconds,
+            expires_at=expires_at,
             alias=alias,
             envd_unresponsive_at_pause=envd_unresponsive_at_pause,
             envd_access_token=envd_access_token,

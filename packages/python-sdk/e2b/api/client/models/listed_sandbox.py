@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -30,6 +30,10 @@ class ListedSandbox:
         disk_size_mb (int): Disk size for the sandbox in MiB
         state (SandboxState): State of the sandbox
         envd_version (str): Version of the envd running in the sandbox
+        paused_retention_seconds (Union[None, int]): Seconds the sandbox may stay paused and unused before it is
+            deleted. Null when no retention is set.
+        expires_at (Union[None, datetime.datetime]): When the paused sandbox will be deleted. Null while the sandbox is
+            running or pausing, and when no retention is set.
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
         envd_unresponsive_at_pause (Union[Unset, bool]): True when the snapshot a paused sandbox would resume from was
@@ -50,6 +54,8 @@ class ListedSandbox:
     disk_size_mb: int
     state: SandboxState
     envd_version: str
+    paused_retention_seconds: Union[None, int]
+    expires_at: Union[None, datetime.datetime]
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     envd_unresponsive_at_pause: Union[Unset, bool] = UNSET
@@ -76,6 +82,15 @@ class ListedSandbox:
         state = self.state.value
 
         envd_version = self.envd_version
+
+        paused_retention_seconds: Union[None, int]
+        paused_retention_seconds = self.paused_retention_seconds
+
+        expires_at: Union[None, str]
+        if isinstance(self.expires_at, datetime.datetime):
+            expires_at = self.expires_at.isoformat()
+        else:
+            expires_at = self.expires_at
 
         alias = self.alias
 
@@ -104,6 +119,8 @@ class ListedSandbox:
                 "diskSizeMB": disk_size_mb,
                 "state": state,
                 "envdVersion": envd_version,
+                "pausedRetentionSeconds": paused_retention_seconds,
+                "expiresAt": expires_at,
             }
         )
         if alias is not UNSET:
@@ -142,6 +159,30 @@ class ListedSandbox:
 
         envd_version = d.pop("envdVersion")
 
+        def _parse_paused_retention_seconds(data: object) -> Union[None, int]:
+            if data is None:
+                return data
+            return cast(Union[None, int], data)
+
+        paused_retention_seconds = _parse_paused_retention_seconds(
+            d.pop("pausedRetentionSeconds")
+        )
+
+        def _parse_expires_at(data: object) -> Union[None, datetime.datetime]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                expires_at_type_0 = isoparse(data)
+
+                return expires_at_type_0
+            except:  # noqa: E722
+                pass
+            return cast(Union[None, datetime.datetime], data)
+
+        expires_at = _parse_expires_at(d.pop("expiresAt"))
+
         alias = d.pop("alias", UNSET)
 
         metadata = d.pop("metadata", UNSET)
@@ -166,6 +207,8 @@ class ListedSandbox:
             disk_size_mb=disk_size_mb,
             state=state,
             envd_version=envd_version,
+            paused_retention_seconds=paused_retention_seconds,
+            expires_at=expires_at,
             alias=alias,
             metadata=metadata,
             envd_unresponsive_at_pause=envd_unresponsive_at_pause,
