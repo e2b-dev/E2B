@@ -645,11 +645,16 @@ export class Sandbox extends SandboxApi {
     opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
   ) {
     // SandboxApi.setPausedRetention validates the value first and only then
-    // skips the request in debug mode, so a bad value throws either way.
+    // skips the request in debug mode, so a bad value throws either way. Only
+    // the per-call timeout and signal are passed on: any other field in `opts`
+    // (such as `debug`) would override the sandbox's own connection settings.
     await SandboxApi.setPausedRetention(
       this.sandboxId,
       retentionMs,
-      this.resolveApiOpts(opts)
+      this.resolveApiOpts({
+        requestTimeoutMs: opts?.requestTimeoutMs,
+        signal: opts?.signal,
+      })
     )
   }
 

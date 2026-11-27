@@ -192,6 +192,20 @@ test('sandbox.setPausedRetention makes no request in debug mode', async () => {
   expect(lastRetentionBody).toBeUndefined()
 })
 
+test('sandbox.setPausedRetention keeps the sandbox debug mode over extra per-call fields', async () => {
+  const sandbox = await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    debug: true,
+  })
+  // A shared options object may carry more than the timeout and signal the
+  // method's type names; its debug: false must not turn the request back on.
+  const sharedOpts = { requestTimeoutMs: 5000, debug: false }
+
+  await sandbox.setPausedRetention(3_600_000, sharedOpts)
+
+  expect(lastRetentionBody).toBeUndefined()
+})
+
 test.for([1500, undefined])(
   'sandbox.setPausedRetention rejects %o in debug mode too',
   async (retentionMs) => {
