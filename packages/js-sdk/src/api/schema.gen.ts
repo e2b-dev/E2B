@@ -3767,6 +3767,8 @@ export interface components {
             /** @description DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IPv4 address, and all traffic to it is allowed. Omit it to allow the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf. */
             dnsServers?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
+            /** @description Whether services listening only on loopback (127.0.0.1, localhost, ::1) inside the sandbox are reachable through sandbox URLs. Services listening on all interfaces are reachable either way. When omitted or null on create, the project's default applies, which is true unless the project changed it. A sandbox keeps the value it was created with through pause and resume. Setting it to false needs a template built with a recent envd: for an older template the create is refused until the template is rebuilt, and a project default of false does not apply, so its sandboxes keep exposing them. */
+            exposeLocalhostPorts?: boolean | null;
             /** @description Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not verified, so self-signed ones work. The envd port (49983) cannot be listed. */
             httpsPorts?: number[];
             /** @description Specify host mask which will be used for all sandbox requests */

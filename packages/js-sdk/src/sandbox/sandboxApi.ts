@@ -381,6 +381,23 @@ export type SandboxNetworkOpts = {
    */
   allowPublicTraffic?: boolean
 
+  /**
+   * Whether services listening only on loopback (`127.0.0.1`, `localhost`, `::1`)
+   * inside the sandbox are reachable through sandbox URLs. Services listening on
+   * all interfaces are reachable either way.
+   *
+   * When omitted, the project's default applies, which is `true` unless the
+   * project changed it. `false` needs a template built with envd 0.12.0 or newer:
+   * for an older template the create is refused until the template is rebuilt.
+   * The sandbox keeps the value through pause and resume.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({ network: { exposeLocalhostPorts: false } })
+   * ```
+   */
+  exposeLocalhostPorts?: boolean
+
   /** Specify host mask which will be used for all sandbox requests in the header.
    * You can use the ${PORT} variable that will be replaced with the actual port number of the service.
    *
@@ -426,6 +443,8 @@ export type SandboxNetworkInfo = {
    */
   dnsServers?: string[]
   allowPublicTraffic?: boolean
+  /** See {@link SandboxNetworkOpts.exposeLocalhostPorts}. */
+  exposeLocalhostPorts?: boolean
   maskRequestHost?: string
   httpsPorts?: number[]
 }
@@ -1464,6 +1483,9 @@ function buildNetworkBody(
     ...(network.allowPublicTraffic !== undefined
       ? { allowPublicTraffic: network.allowPublicTraffic }
       : {}),
+    ...(network.exposeLocalhostPorts !== undefined
+      ? { exposeLocalhostPorts: network.exposeLocalhostPorts }
+      : {}),
     ...(network.maskRequestHost !== undefined
       ? { maskRequestHost: network.maskRequestHost }
       : {}),
@@ -1636,6 +1658,8 @@ export class SandboxApi extends ClientFactory {
               : {}),
             allowPublicTraffic:
               res.data.network.allowPublicTraffic ?? undefined,
+            exposeLocalhostPorts:
+              res.data.network.exposeLocalhostPorts ?? undefined,
             maskRequestHost: res.data.network.maskRequestHost,
             httpsPorts: res.data.network.httpsPorts,
           }

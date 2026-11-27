@@ -23,6 +23,12 @@ class SandboxNetworkConfig:
         allow_public_traffic (Union[None, Unset, bool]): Whether sandbox URLs accept traffic without the sandbox's
             traffic access token. When omitted or null on create, the project's default applies, which is true unless the
             project changed it.
+        expose_localhost_ports (Union[None, Unset, bool]): Whether services listening only on loopback (127.0.0.1,
+            localhost, ::1) inside the sandbox are reachable through sandbox URLs. Services listening on all interfaces are
+            reachable either way. When omitted or null on create, the project's default applies, which is true unless the
+            project changed it. A sandbox keeps the value it was created with through pause and resume. Setting it to false
+            needs a template built with a recent envd: for an older template the create is refused until the template is
+            rebuilt, and a project default of false does not apply, so its sandboxes keep exposing them.
         allow_out (Union[Unset, list[str]]): List of allowed destinations for egress traffic. Each entry can be a CIDR
             block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com",
             "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain,
@@ -49,6 +55,7 @@ class SandboxNetworkConfig:
     """
 
     allow_public_traffic: Union[None, Unset, bool] = UNSET
+    expose_localhost_ports: Union[None, Unset, bool] = UNSET
     allow_out: Union[Unset, list[str]] = UNSET
     deny_out: Union[Unset, list[str]] = UNSET
     dns_servers: Union[Unset, list[str]] = UNSET
@@ -68,6 +75,12 @@ class SandboxNetworkConfig:
             allow_public_traffic = UNSET
         else:
             allow_public_traffic = self.allow_public_traffic
+
+        expose_localhost_ports: Union[None, Unset, bool]
+        if isinstance(self.expose_localhost_ports, Unset):
+            expose_localhost_ports = UNSET
+        else:
+            expose_localhost_ports = self.expose_localhost_ports
 
         allow_out: Union[Unset, list[str]] = UNSET
         if not isinstance(self.allow_out, Unset):
@@ -104,6 +117,8 @@ class SandboxNetworkConfig:
         field_dict.update({})
         if allow_public_traffic is not UNSET:
             field_dict["allowPublicTraffic"] = allow_public_traffic
+        if expose_localhost_ports is not UNSET:
+            field_dict["exposeLocalhostPorts"] = expose_localhost_ports
         if allow_out is not UNSET:
             field_dict["allowOut"] = allow_out
         if deny_out is not UNSET:
@@ -139,6 +154,17 @@ class SandboxNetworkConfig:
 
         allow_public_traffic = _parse_allow_public_traffic(
             d.pop("allowPublicTraffic", UNSET)
+        )
+
+        def _parse_expose_localhost_ports(data: object) -> Union[None, Unset, bool]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, bool], data)
+
+        expose_localhost_ports = _parse_expose_localhost_ports(
+            d.pop("exposeLocalhostPorts", UNSET)
         )
 
         allow_out = cast(list[str], d.pop("allowOut", UNSET))
@@ -181,6 +207,7 @@ class SandboxNetworkConfig:
 
         sandbox_network_config = cls(
             allow_public_traffic=allow_public_traffic,
+            expose_localhost_ports=expose_localhost_ports,
             allow_out=allow_out,
             deny_out=deny_out,
             dns_servers=dns_servers,

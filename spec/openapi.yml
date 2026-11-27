@@ -713,6 +713,18 @@ components:
             Whether sandbox URLs accept traffic without the sandbox's traffic access token.
             When omitted or null on create, the project's default applies, which is true
             unless the project changed it.
+        exposeLocalhostPorts:
+          type: boolean
+          nullable: true
+          description: >-
+            Whether services listening only on loopback (127.0.0.1, localhost, ::1) inside
+            the sandbox are reachable through sandbox URLs. Services listening on all
+            interfaces are reachable either way. When omitted or null on create, the
+            project's default applies, which is true unless the project changed it. A
+            sandbox keeps the value it was created with through pause and resume. Setting
+            it to false needs a template built with a recent envd: for an older template the
+            create is refused until the template is rebuilt, and a project default of false
+            does not apply, so its sandboxes keep exposing them.
         allowOut:
           type: array
           description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed.
@@ -2532,6 +2544,67 @@ components:
           description: All aliases of the template, those without a namespace first
           items:
             $ref: "#/components/schemas/AdminTemplateAlias"
+
+    AdminTemplateAliasResolveRequest:
+      required:
+        - namespace
+        - names
+      properties:
+        namespace:
+          type: string
+          minLength: 1
+          description: Namespace to resolve each name in, next to the alias without a namespace
+        names:
+          type: array
+          minItems: 1
+          maxItems: 200
+          uniqueItems: true
+          description: Aliases to resolve, matched exactly
+          items:
+            type: string
+            minLength: 1
+
+    AdminResolvedTemplate:
+      required:
+        - templateID
+        - public
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template that holds the alias
+        public:
+          type: boolean
+          description: Whether the template is public
+
+    AdminTemplateAliasResolution:
+      required:
+        - name
+        - naked
+        - namespaced
+      properties:
+        name:
+          type: string
+          description: The name as given
+        naked:
+          allOf:
+            - $ref: "#/components/schemas/AdminResolvedTemplate"
+          nullable: true
+          description: The template holding the name as an alias without a namespace, null when none does
+        namespaced:
+          allOf:
+            - $ref: "#/components/schemas/AdminResolvedTemplate"
+          nullable: true
+          description: The template holding the name in the requested namespace, null when none does
+
+    AdminTemplateAliasResolveResponse:
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          description: One entry per requested name, in request order
+          items:
+            $ref: "#/components/schemas/AdminTemplateAliasResolution"
 
     AdminTemplateAliasCreateRequest:
       required:
@@ -8660,6 +8733,38 @@ paths:
           $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/templates/aliases/resolve:
+    post:
+      summary: Resolve template names as admin
+      description: >
+        For each name, reports the template that holds it as an alias without a namespace and the
+        template that holds it in `namespace`, each with whether the template is public. A name no
+        template holds in that place answers null there. Deleted templates are left out. Names are
+        matched exactly and answered in the order given.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTemplateAliasResolveRequest"
+      responses:
+        "200":
+          description: Successfully resolved the names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTemplateAliasResolveResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
 
