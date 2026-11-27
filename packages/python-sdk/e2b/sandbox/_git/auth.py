@@ -1,5 +1,5 @@
 from typing import Optional
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import quote, urlparse, urlunparse
 
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.commands.command_handle import CommandExitException
@@ -27,7 +27,14 @@ def with_credentials(url: str, username: Optional[str], password: Optional[str])
             "Only http(s) Git URLs support username/password credentials."
         )
 
-    netloc = f"{username}:{password}@{parsed.netloc}"
+    host = parsed.hostname or ""
+    if ":" in host:
+        host = f"[{host}]"
+    if parsed.port:
+        host = f"{host}:{parsed.port}"
+
+    userinfo = f"{quote(username, safe='')}:{quote(password, safe='')}"
+    netloc = f"{userinfo}@{host}"
     return urlunparse(parsed._replace(netloc=netloc))
 
 
