@@ -1,11 +1,17 @@
 ---
 name: tdd
-description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
+description: Rules for writing tests - which seams to test at, what to mock, and the red-green loop. Use before writing, changing or fixing any test, including a test that is only part of a bug fix or a feature, and when the user asks for TDD, "red-green-refactor" or integration tests.
 ---
 
 # Test-Driven Development
 
 TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle: consult them before and during the loop, not after.
+
+## Before the first test
+
+1. Read [tests.md](tests.md) and [mocking.md](mocking.md) in full. They are short, and the rules below rely on them.
+2. Settle the seams (see below) before any test exists.
+3. Do not take the project's existing tests as the standard. A neighbouring test that replaces an internal module or calls a private helper is a pattern to leave behind, not one to copy for consistency.
 
 ## What a good test is
 
@@ -17,9 +23,15 @@ See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking g
 
 A **seam** is the public boundary you test at: the interface where you observe behavior without reaching inside. Tests live at seams, never against internals.
 
-**Test only at pre-agreed seams.** Before writing any test, write down the seams under test and confirm them with the user. No test is written at an unconfirmed seam. You can't test everything, so agreeing the seams up front is how testing effort lands on the critical paths and complex logic instead of every edge case.
+**Test only at agreed seams.** Before writing any test, write down the seams under test, each with a one-line note on what it catches and what it misses. You can't test everything, so agreeing the seams up front is how testing effort lands on the critical paths and complex logic instead of every edge case.
 
-Ask: "What's the public interface, and which seams should we test?" Give each proposed seam a one-line note on what it catches and what it misses.
+How the seams get agreed depends on where you are:
+
+- **The project's agent instructions list them** (`CLAUDE.md`, `AGENTS.md` or similar). Use those and say which ones you are using. Only a seam that is not on that list needs the user's confirmation.
+- **Nothing is listed and the user can answer.** Ask: "What's the public interface, and which seams should we test?" Wait for the answer; no test is written at an unconfirmed seam.
+- **Nothing is listed and you cannot ask** (you are running unattended). Choose the seams these rules lead to, put them at the top of your report with their one-line notes, and mark them unconfirmed. Do not skip the step silently.
+
+When a behavior cannot be observed at an agreed seam, say so and ask or flag it. Do not reach inside for it.
 
 ## Anti-patterns
 
@@ -29,9 +41,21 @@ Ask: "What's the public interface, and which seams should we test?" Give each pr
 
 ## Rules of the loop
 
-- **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features.
-- **One slice at a time.** One seam, one test, one minimal implementation per cycle.
+- **Red before green.** Write the failing test first and run it. See it fail for the reason you expect, then write only enough code to pass it. Don't anticipate future tests or add speculative features.
+- **One slice at a time.** One seam, one test, one minimal implementation per cycle. One behavior tried with several inputs is one slice; five behaviors are five slices, not one batch.
+- **A changed test is a new test.** When you edit a test's expectation, see it fail against the code as it was.
+- **A test that passes before the change is outside the loop.** It pins behavior that must stay as it is. Write one only for that purpose, and say that it is one.
 - **Refactor only on green.** Refactoring is a separate step after the loop, never mixed into a red → green cycle; the tests stay unchanged and must keep passing.
+
+## Before you report
+
+Check each of these, and say in the report where one does not hold:
+
+- Every new or changed test was seen red against the code without the change, or is named as pinning existing behavior.
+- Every test goes through an agreed seam. Nothing inside the project is replaced or called directly.
+- Mocks sit at system boundaries only.
+- Each test makes one logical assertion and has a name that says what holds, not how.
+- Anything you could not test at a seam is listed, with the reason.
 
 ---
 
