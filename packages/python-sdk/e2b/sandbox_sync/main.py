@@ -652,6 +652,80 @@ class Sandbox(SandboxApi):
         )
 
     @overload
+    def set_paused_retention(
+        self,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set how long the sandbox may stay paused and unused before it is deleted,
+        replacing the retention set on create or by an earlier call.
+
+        For a paused sandbox the clock restarts: it is deleted `paused_retention`
+        seconds after this call, or never when the retention is removed. A running
+        sandbox keeps the new retention for when its current run ends.
+
+        :param paused_retention: Paused retention in **seconds**, from 1 hour
+            (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def set_paused_retention(
+        sandbox_id: str,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set how long the sandbox specified by sandbox ID may stay paused and unused
+        before it is deleted, replacing the retention set on create or by an earlier
+        call.
+
+        For a paused sandbox the clock restarts: it is deleted `paused_retention`
+        seconds after this call, or never when the retention is removed. A running
+        sandbox keeps the new retention for when its current run ends.
+
+        :param sandbox_id: Sandbox ID
+        :param paused_retention: Paused retention in **seconds**, from 1 hour
+            (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+        """
+        ...
+
+    @class_method_variant("_cls_set_paused_retention")
+    def set_paused_retention(
+        self,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Set how long the sandbox may stay paused and unused before it is deleted,
+        replacing the retention set on create or by an earlier call.
+
+        For a paused sandbox the clock restarts: it is deleted `paused_retention`
+        seconds after this call, or never when the retention is removed. A running
+        sandbox keeps the new retention for when its current run ends.
+
+        :param paused_retention: Paused retention in **seconds**, from 1 hour
+            (``3_600``) to 100 years (``3_153_600_000``), or ``None`` to remove it.
+
+        :raises InvalidArgumentException: If ``paused_retention`` is outside the range.
+        :raises SandboxNotFoundException: If the sandbox does not exist.
+        :raises SandboxException: With status 409 while the sandbox is changing
+            state (pausing or resuming); retry once it settles.
+
+        Example::
+
+            sandbox.set_paused_retention(24 * 3600)  # delete after a day paused
+            sandbox.set_paused_retention(None)  # keep it until deleted explicitly
+        """
+        SandboxApi._cls_set_paused_retention(
+            sandbox_id=self.sandbox_id,
+            paused_retention=paused_retention,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
     def update_network(
         self,
         network: SandboxNetworkUpdate,

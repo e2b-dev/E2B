@@ -505,6 +505,8 @@ def test_sandbox_info_maps_envd_unresponsive_at_pause(state, value, expected):
         "memoryMB": 512,
         "diskSizeMB": 1024,
         "state": state,
+        "pausedRetentionSeconds": None,
+        "expiresAt": None,
     }
     if value is not None:
         data["envdUnresponsiveAtPause"] = value

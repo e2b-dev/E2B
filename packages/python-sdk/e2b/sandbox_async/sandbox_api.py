@@ -19,6 +19,7 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
     put_sandboxes_sandbox_id_network,
+    put_sandboxes_sandbox_id_paused_retention,
 )
 from e2b.api.client.models import (
     ConnectSandboxV2,
@@ -29,6 +30,7 @@ from e2b.api.client.models import (
     SandboxForkRequest,
     SandboxNetworkConfig,
     SandboxPauseRequest,
+    SandboxPausedRetentionRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
 )
 from e2b.api.client.types import UNSET, Unset
@@ -64,6 +66,7 @@ from e2b.sandbox.sandbox_api import (
     build_network_config,
     to_sandbox_create_response,
     validate_fork_count,
+    validate_paused_retention,
 )
 from e2b.template_async.build_api import delete_template
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
@@ -187,6 +190,34 @@ class SandboxApi(SandboxBase):
             raise handle_api_exception(res)
 
     @classmethod
+    async def _cls_set_paused_retention(
+        cls,
+        sandbox_id: str,
+        paused_retention: Optional[int],
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        # None is a removal and must reach the API as an explicit JSON null.
+        seconds = (
+            validate_paused_retention("paused_retention", paused_retention)
+            if paused_retention is not None
+            else None
+        )
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        api_client = get_api_client(config)
+        res = await put_sandboxes_sandbox_id_paused_retention.asyncio_detailed(
+            sandbox_id,
+            client=api_client,
+            body=SandboxPausedRetentionRequest(paused_retention_seconds=seconds),
+        )
+
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+    @classmethod
     async def _cls_update_network(
         cls,
         sandbox_id: str,
@@ -242,6 +273,7 @@ class SandboxApi(SandboxBase):
             auto_pause=lifecycle_body.auto_pause,
             auto_pause_memory=lifecycle_body.auto_pause_memory,
             auto_resume=lifecycle_body.auto_resume,
+            paused_retention_seconds=lifecycle_body.paused_retention_seconds,
             metadata=metadata or {},
             timeout=timeout if timeout is not None else UNSET,
             cpu_count=cpu_count if cpu_count is not None else UNSET,

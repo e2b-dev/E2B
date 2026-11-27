@@ -742,6 +742,22 @@ class SandboxLifecycle(TypedDict):
     filesystem-only snapshot must be resumed explicitly via `connect()`).
     """
 
+    paused_retention: NotRequired[int]
+    """
+    How long the sandbox may stay paused and unused before it is deleted, in
+    **seconds**, from 1 hour (``3_600``) to 100 years (``3_153_600_000``). The
+    clock restarts every time a run of the sandbox ends, by pause or by kill.
+    Leave unset to keep the sandbox until it is deleted explicitly. Change it
+    later with ``set_paused_retention()``. A value outside the range raises
+    `InvalidArgumentException`.
+
+    Example::
+
+        Sandbox.create(
+            lifecycle={"on_timeout": "pause", "paused_retention": 7 * 24 * 3600}
+        )
+    """
+
 
 class SandboxInfoLifecycle(TypedDict):
     """
@@ -757,6 +773,37 @@ class SandboxInfoLifecycle(TypedDict):
     """
     Whether activity should cause the sandbox to resume when paused.
     """
+
+    paused_retention: Optional[int]
+    """
+    How long the sandbox may stay paused and unused before it is deleted, in
+    seconds. `None` when the sandbox has no paused retention.
+    """
+
+
+PAUSED_RETENTION_MIN_SECONDS = 3_600
+"""Shortest paused retention the API accepts: 1 hour."""
+
+PAUSED_RETENTION_MAX_SECONDS = 3_153_600_000
+"""Longest paused retention the API accepts: 100 years of 365 days."""
+
+
+def validate_paused_retention(field: str, paused_retention: Any) -> int:
+    """Refuse a paused retention the API would reject, before any request is made."""
+    # bool is an int subclass; True would otherwise pass as one second.
+    if not isinstance(paused_retention, int) or isinstance(paused_retention, bool):
+        raise InvalidArgumentException(
+            f"{field} must be a whole number of seconds (got {paused_retention!r})."
+        )
+    if not (
+        PAUSED_RETENTION_MIN_SECONDS <= paused_retention <= PAUSED_RETENTION_MAX_SECONDS
+    ):
+        raise InvalidArgumentException(
+            f"{field} must be between {PAUSED_RETENTION_MIN_SECONDS} (1 hour) and "
+            f"{PAUSED_RETENTION_MAX_SECONDS} (100 years) seconds "
+            f"(got {paused_retention!r})."
+        )
+    return paused_retention
 
 
 def resolve_connect_memory(
@@ -1126,6 +1173,7 @@ class SandboxLifecycleBody:
     auto_pause: Union[Unset, bool]
     auto_pause_memory: Union[Unset, bool]
     auto_resume: Union[Unset, ClientSandboxAutoResumeConfig]
+    paused_retention_seconds: Union[Unset, int]
 
 
 def build_lifecycle_config(
@@ -1191,6 +1239,13 @@ def build_lifecycle_config(
             "must be resumed explicitly using Sandbox.connect()."
         )
 
+    # A missing retention — or an explicit None from an untyped caller — is
+    # left out of the request: the sandbox then has none, which is what the API
+    # does with an omitted field.
+    paused_retention = lifecycle.get("paused_retention") if lifecycle else None
+    if paused_retention is not None:
+        validate_paused_retention('lifecycle["paused_retention"]', paused_retention)
+
     return SandboxLifecycleBody(
         auto_pause=(on_timeout == "pause") if on_timeout_configured else UNSET,
         auto_pause_memory=memory if on_timeout == "pause" else UNSET,
@@ -1198,6 +1253,9 @@ def build_lifecycle_config(
             ClientSandboxAutoResumeConfig(enabled=auto_resume)
             if auto_resume is not None
             else UNSET
+        ),
+        paused_retention_seconds=(
+            paused_retention if paused_retention is not None else UNSET
         ),
     )
 
@@ -1290,6 +1348,7 @@ def from_client_network_config(
 
 def from_client_lifecycle(
     lifecycle: Union[Unset, ClientSandboxLifecycle],
+    paused_retention_seconds: Optional[int] = None,
 ) -> Optional[SandboxInfoLifecycle]:
     if isinstance(lifecycle, Unset):
         return None
@@ -1297,6 +1356,7 @@ def from_client_lifecycle(
     result: SandboxInfoLifecycle = {
         "on_timeout": cast(Literal["pause", "kill"], lifecycle.on_timeout),
         "auto_resume": lifecycle.auto_resume,
+        "paused_retention": paused_retention_seconds,
     }
 
     return result
@@ -1338,6 +1398,8 @@ class SandboxInfo:
     """Volume mounts for the sandbox."""
     envd_unresponsive_at_pause: Optional[bool] = None
     """`True` when the snapshot this paused sandbox resumes from was taken while its guest agent (envd) was not responding. Such a sandbox resumes only with `on_resume="reboot"`; a plain resume raises `GuestUnresponsiveException`. `None` otherwise."""
+    paused_expires_at: Optional[datetime] = None
+    """When this paused sandbox will be deleted. Set only while the sandbox is paused and has a paused retention (see `SandboxLifecycle.paused_retention`); `None` while it runs."""
 
     @classmethod
     def _from_sandbox_data(
@@ -1374,6 +1436,9 @@ class SandboxInfo:
             envd_unresponsive_at_pause=(
                 True if sandbox.envd_unresponsive_at_pause is True else None
             ),
+            paused_expires_at=(
+                sandbox.expires_at if isinstance(sandbox.expires_at, datetime) else None
+            ),
         )
 
     @classmethod
@@ -1395,7 +1460,10 @@ class SandboxInfo:
                 else None
             ),
             network=from_client_network_config(sandbox_detail.network),
-            lifecycle=from_client_lifecycle(sandbox_detail.lifecycle),
+            lifecycle=from_client_lifecycle(
+                sandbox_detail.lifecycle,
+                sandbox_detail.paused_retention_seconds,
+            ),
         )
 
 
