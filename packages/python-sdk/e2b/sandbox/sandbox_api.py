@@ -491,6 +491,22 @@ class SandboxNetworkOpts(TypedDict):
     When omitted, the server applies its default.
     """
 
+    expose_localhost_ports: NotRequired[bool]
+    """
+    Whether services listening only on loopback (``127.0.0.1``, ``localhost``, ``::1``)
+    inside the sandbox are reachable through sandbox URLs. Services listening on all
+    interfaces are reachable either way.
+
+    When omitted, the project's default applies, which is ``True`` unless the project
+    changed it. ``False`` needs a template built with envd 0.12.0 or newer: for an older
+    template the create is refused until the template is rebuilt. The sandbox keeps the
+    value through pause and resume.
+
+    Example::
+
+        Sandbox.create(network={"expose_localhost_ports": False})
+    """
+
     mask_request_host: NotRequired[str]
     """
     Allows specifying a custom host mask for all sandbox requests.
@@ -621,6 +637,8 @@ class SandboxNetworkInfo(TypedDict, total=False):
     ``8.8.8.8``.
     """
     allow_public_traffic: bool
+    expose_localhost_ports: bool
+    """See :attr:`SandboxNetworkOpts.expose_localhost_ports`."""
     mask_request_host: str
     https_ports: List[int]
 
@@ -1065,6 +1083,8 @@ def build_network_config(
         body["rules"] = client_rules
     if "allow_public_traffic" in network:
         body["allow_public_traffic"] = network["allow_public_traffic"]
+    if "expose_localhost_ports" in network:
+        body["expose_localhost_ports"] = network["expose_localhost_ports"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
     if network.get("https_ports") is not None:
@@ -1280,6 +1300,10 @@ def from_client_network_config(
         network.allow_public_traffic, Unset
     ):
         result["allow_public_traffic"] = network.allow_public_traffic
+    if network.expose_localhost_ports is not None and not isinstance(
+        network.expose_localhost_ports, Unset
+    ):
+        result["expose_localhost_ports"] = network.expose_localhost_ports
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host
     if not isinstance(network.https_ports, Unset):
