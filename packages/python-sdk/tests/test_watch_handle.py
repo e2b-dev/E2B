@@ -1,6 +1,8 @@
 import asyncio
 from typing import cast
 
+import pytest
+
 from packaging.version import Version
 
 from e2b.connection_config import ConnectionConfig
@@ -218,3 +220,96 @@ async def test_async_on_exit_error_does_not_leak():
     await handle._wait
     assert handle._wait.done()
     assert handle._wait.exception() is None
+
+
+# --- Async WatchHandle: stop before the background task starts (bug 2071) ---
+
+
+async def test_async_on_exit_fires_on_stop_before_task_starts():
+    # Stopping before the background task's first step must still fire
+    # on_exit: a task cancelled before it starts never runs the
+    # CancelledError handler in _handle_events, so stop() has to cover that
+    # window itself.
+    exit_calls = []
+
+    async def events():
+        await asyncio.Event().wait()
+        yield  # pragma: no cover - never reached
+
+    handle = AsyncWatchHandle(
+        events=events(),
+        on_event=lambda e: None,
+        on_exit=exit_calls.append,
+    )
+
+    await handle.stop()
+
+    assert exit_calls == [None]
+
+
+async def test_async_on_exit_fires_once_on_stop_before_task_starts_with_async_callback():
+    # Same pre-start window with an async callback: stop() must drive the
+    # callback to completion exactly once.
+    exit_calls = []
+
+    async def on_exit(err):
+        # A real suspension proves stop() awaits the callback rather than
+        # firing it without giving it a chance to run.
+        await asyncio.sleep(0)
+        exit_calls.append(err)
+
+    async def events():
+        await asyncio.Event().wait()
+        yield  # pragma: no cover - never reached
+
+    handle = AsyncWatchHandle(
+        events=events(),
+        on_event=lambda e: None,
+        on_exit=on_exit,
+    )
+
+    await handle.stop()
+
+    assert exit_calls == [None]
+
+
+async def test_async_stop_closes_stream_when_fallback_on_exit_is_cancelled():
+    # Codex review (round 1, P2): if the fallback on_exit fired by stop()
+    # awaits an already-cancelled task, the CancelledError propagates out of
+    # _call_on_exit (a BaseException, deliberately not swallowed). stop() must
+    # still close the events stream - watch_dir already opened it and consumed
+    # its start event - so the close belongs in a finally, not after the
+    # callback.
+    closed = []
+
+    async def events():
+        await asyncio.Event().wait()
+        yield  # pragma: no cover - never reached
+
+    class _TrackedEvents:
+        def __init__(self, gen):
+            self._gen = gen
+
+        def __aiter__(self):
+            return self._gen
+
+        async def aclose(self):
+            closed.append(True)
+            await self._gen.aclose()
+
+    cancelled = asyncio.get_event_loop().create_task(asyncio.sleep(10))
+    cancelled.cancel()
+
+    async def on_exit(err):
+        await cancelled  # raises CancelledError
+
+    handle = AsyncWatchHandle(
+        events=_TrackedEvents(events()),
+        on_event=lambda e: None,
+        on_exit=on_exit,
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await handle.stop()
+
+    assert closed == [True]
