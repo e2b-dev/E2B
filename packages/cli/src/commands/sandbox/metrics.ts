@@ -34,8 +34,6 @@ export const metricsCommand = new commander.Command('metrics')
         console.log(`\nMetrics for sandbox ${asBold(sandboxID)}:`)
       }
 
-      const isRunningPromise = isRunning(sandboxID)
-
       do {
         // Per iteration: `--follow` can outlive the hour-long access token.
         const metrics = await Sandbox.getMetrics(sandboxID, {
@@ -58,9 +56,11 @@ export const metricsCommand = new commander.Command('metrics')
           printMetric(metric.timestamp, JSON.stringify(metric), format)
         }
 
-        const isRunning = await isRunningPromise
+        // Re-check each iteration so `--follow` stops once the sandbox is no
+        // longer running (paused or closed), not just at start-up.
+        const running = await isRunning(sandboxID)
 
-        if (!isRunning && metrics.length === 0 && isFirstRun) {
+        if (!running && metrics.length === 0 && isFirstRun) {
           if (format === Format.PRETTY) {
             console.log(
               `\nStopped printing metrics — sandbox ${withUnderline(
@@ -71,7 +71,7 @@ export const metricsCommand = new commander.Command('metrics')
           break
         }
 
-        if (!isRunning) {
+        if (!running) {
           if (format === Format.PRETTY) {
             console.log(
               `\nStopped printing metrics — sandbox is ${withUnderline(
