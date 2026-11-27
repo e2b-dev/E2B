@@ -192,6 +192,22 @@ test('sandbox.setPausedRetention makes no request in debug mode', async () => {
   expect(lastRetentionBody).toBeUndefined()
 })
 
+test.for([1500, undefined])(
+  'sandbox.setPausedRetention rejects %o in debug mode too',
+  async (retentionMs) => {
+    const sandbox = await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      debug: true,
+    })
+
+    await expect(
+      sandbox.setPausedRetention(retentionMs as number)
+    ).rejects.toThrowError(InvalidArgumentError)
+
+    expect(lastRetentionBody).toBeUndefined()
+  }
+)
+
 test('setPausedRetention throws SandboxNotFoundError for an unknown sandbox', async () => {
   server.use(
     http.put(apiUrl(`/sandboxes/${sandboxId}/paused-retention`), () =>
