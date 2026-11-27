@@ -6,6 +6,7 @@ import {
   ConnectionOpts,
 } from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
+import { assertInteger } from '../validation'
 import { runtime, shellQuote } from '../utils'
 import { callableTemplate } from './callable'
 import { TemplateBuildPaginator, TemplatePaginator } from './paginator'
@@ -55,6 +56,7 @@ import {
   getCallerFrame,
   normalizeBuildArguments,
   padOctal,
+  quotePackage,
   readDockerignore,
   readGCPServiceAccountJSON,
   validateNameOrIdWithoutTag,
@@ -900,7 +902,7 @@ export class TemplateBase
       args.push('--user')
     }
     if (packageList) {
-      args.push(...packageList)
+      args.push(...packageList.map(quotePackage))
     } else {
       args.push('.')
     }
@@ -927,7 +929,7 @@ export class TemplateBase
       args.push('--save-dev')
     }
     if (packageList) {
-      args.push(...packageList)
+      args.push(...packageList.map(quotePackage))
     }
 
     return this.runCmd(args.join(' '), {
@@ -952,7 +954,7 @@ export class TemplateBase
       args.push('--dev')
     }
     if (packageList) {
-      args.push(...packageList)
+      args.push(...packageList.map(quotePackage))
     }
 
     return this.runCmd(args.join(' '), {
@@ -968,9 +970,9 @@ export class TemplateBase
     return this.runCmd(
       [
         'apt-get update',
-        `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ? '--no-install-recommends ' : ''}${options?.fixMissing ? '--fix-missing ' : ''}${packageList.join(
-          ' '
-        )}`,
+        `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ? '--no-install-recommends ' : ''}${options?.fixMissing ? '--fix-missing ' : ''}${packageList
+          .map(quotePackage)
+          .join(' ')}`,
       ],
       { user: 'root' }
     )
@@ -985,9 +987,10 @@ export class TemplateBase
     }
 
     const serverList = Array.isArray(servers) ? servers : [servers]
-    return this.runCmd(`mcp-gateway pull ${serverList.join(' ')}`, {
-      user: 'root',
-    })
+    return this.runCmd(
+      `mcp-gateway pull ${serverList.map(quotePackage).join(' ')}`,
+      { user: 'root' }
+    )
   }
 
   gitClone(
@@ -1001,6 +1004,7 @@ export class TemplateBase
       args.push('--single-branch')
     }
     if (options?.depth) {
+      assertInteger(options.depth, 'depth', 1, 2 ** 31 - 1)
       args.push(`--depth ${options.depth}`)
     }
     if (path) {

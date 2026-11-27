@@ -5,6 +5,7 @@ from typing import Dict, Optional, TypedDict, Unpack
 
 from e2b.api.metadata import package_version
 from e2b.connection_config import HttpVersion, ProxyTypes, resolve_http_version
+from e2b.validation import resolve_timeout
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -84,12 +85,22 @@ class VolumeConnectionConfig:
         default_timeout: Optional[float],
         request_timeout: Optional[float],
     ):
+        request_timeout = resolve_timeout(request_timeout, "request_timeout")
         if request_timeout == 0:
             return None
         elif request_timeout is not None:
             return request_timeout
         else:
             return default_timeout
+
+    def _api_params_request_timeout(
+        self, request_timeout: Optional[float]
+    ) -> Optional[float]:
+        """The request timeout to hand to a config rebuilt from the API
+        params. A disabled timeout resolves to ``None``, which a new config
+        reads as "use the default", so it is handed over as ``0``."""
+        resolved = self.get_request_timeout(request_timeout)
+        return 0 if resolved is None else resolved
 
     def __init__(
         self,
@@ -155,7 +166,7 @@ class VolumeConnectionConfig:
                 debug=debug if debug is not None else self.debug,
                 token=token if token is not None else self.token,
                 api_url=api_url if api_url is not None else self.api_url,
-                request_timeout=self.get_request_timeout(request_timeout),
+                request_timeout=self._api_params_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
                 http_version=(

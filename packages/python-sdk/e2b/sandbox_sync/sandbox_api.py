@@ -40,6 +40,7 @@ from e2b.exceptions import (
     TemplateException,
 )
 from e2b.retry import resolve_idempotency_key
+from e2b.validation import assert_string_values
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
@@ -227,6 +228,9 @@ class SandboxApi(SandboxBase):
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         key = resolve_idempotency_key(idempotency_key)
+        # A value read from an unset environment variable is ``None``.
+        assert_string_values(env_vars, "envs")
+        assert_string_values(metadata, "metadata")
         params = cls._resolve_api_params(**opts)
         config = ConnectionConfig(logger=logger, **params)
 

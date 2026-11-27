@@ -7,11 +7,7 @@ import {
 } from '../errors'
 import { Paginator } from '../paginator'
 import { isTemplateNotFound, validateNameOrIdWithoutTag } from './utils'
-import {
-  convertTemplateBuildWithTags,
-  convertTemplateInfo,
-  TEMPLATE_BUILD_STATUSES,
-} from './types'
+import { convertTemplateBuildWithTags, convertTemplateInfo } from './types'
 import type {
   TemplateBuildListOpts,
   TemplateBuildStatus,
@@ -106,14 +102,6 @@ export class TemplateBuildPaginator extends Paginator<TemplateBuildWithTags> {
     // the API refuses repeated statuses.
     this.statuses = [...new Set(opts?.statuses ?? [])]
     this.tags = [...(opts?.tags ?? [])]
-
-    for (const status of this.statuses) {
-      if (!TEMPLATE_BUILD_STATUSES.includes(status)) {
-        throw new InvalidArgumentError(
-          `Unknown build status '${status}', expected one of: ${TEMPLATE_BUILD_STATUSES.join(', ')}.`
-        )
-      }
-    }
 
     // Tags are sent as one comma-separated value, so an empty tag or one
     // with a comma would not reach the API as the tag that was given.

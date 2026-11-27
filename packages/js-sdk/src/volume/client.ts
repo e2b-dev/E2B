@@ -11,6 +11,7 @@ import {
 } from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
+import { pathSerializer } from '../validation'
 
 const FILE_TIMEOUT_MS = 3_600_000 // 1 hour
 
@@ -142,6 +143,7 @@ class VolumeApiClient {
         ...(config.token && { Authorization: `Bearer ${config.token}` }),
         ...config.headers,
       },
+      pathSerializer,
     })
 
     if (config.logger) {

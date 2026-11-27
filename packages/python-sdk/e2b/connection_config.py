@@ -16,6 +16,7 @@ from typing import (
 import httpx
 from e2b.exceptions import InvalidArgumentException
 from e2b.retry import resolve_max_retries
+from e2b.validation import resolve_timeout
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 
@@ -326,12 +327,22 @@ class ConnectionConfig:
         default_timeout: Optional[float],
         request_timeout: Optional[float],
     ):
+        request_timeout = resolve_timeout(request_timeout, "request_timeout")
         if request_timeout == 0:
             return None
         elif request_timeout is not None:
             return request_timeout
         else:
             return default_timeout
+
+    def _api_params_request_timeout(
+        self, request_timeout: Optional[float]
+    ) -> Optional[float]:
+        """The request timeout to hand to a config rebuilt from the API
+        params. A disabled timeout resolves to ``None``, which a new config
+        reads as "use the default", so it is handed over as ``0``."""
+        resolved = self.get_request_timeout(request_timeout)
+        return 0 if resolved is None else resolved
 
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
@@ -438,7 +449,7 @@ class ConnectionConfig:
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
-                request_timeout=self.get_request_timeout(request_timeout),
+                request_timeout=self._api_params_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
                 sandbox_url=(

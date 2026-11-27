@@ -33,6 +33,7 @@ from e2b.api.client.models import (
     DeleteTemplateTagsRequest,
 )
 from e2b.api.client.types import UNSET, Unset
+from e2b.validation import resolve_timeout
 from e2b.exceptions import (
     BuildException,
     FileUploadException,
@@ -139,9 +140,12 @@ def upload_file(
     # general API timeout, so default to a 1-hour upload timeout unless the
     # caller set an explicit request_timeout. Matches the JS SDK
     # (FILE_UPLOAD_TIMEOUT_MS).
-    upload_timeout = (
-        request_timeout if request_timeout is not None else FILE_UPLOAD_TIMEOUT_SECONDS
-    )
+    # `0` disables the timeout, as it does for every other request; passed on
+    # as it is, it would be a timeout of zero seconds.
+    request_timeout = resolve_timeout(request_timeout, "request_timeout")
+    upload_timeout: Optional[float] = FILE_UPLOAD_TIMEOUT_SECONDS
+    if request_timeout is not None:
+        upload_timeout = request_timeout or None
     upload_proxy = proxy_to_config(getattr(api_client, "_proxy", None))
     try:
         tar_file = tar_file_stream(

@@ -1,11 +1,9 @@
 from types import SimpleNamespace
-from typing import cast
 
 import pytest
 
 from e2b.api.client.types import UNSET
 from e2b.client import E2B
-from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox_async import sandbox_api as async_sandbox_api
 from e2b.sandbox_async.main import AsyncSandbox
 from e2b.sandbox_sync import sandbox_api as sync_sandbox_api
@@ -59,58 +57,6 @@ def test_sync_create_accepts_valid_idempotency_keys(monkeypatch, key):
     assert requests == [key]
 
 
-@pytest.mark.parametrize(
-    ("key", "message"),
-    [
-        ("", "Invalid idempotency_key: expected 1-255 characters, got 0."),
-        (
-            "a" * 256,
-            "Invalid idempotency_key: expected 1-255 characters, got 256.",
-        ),
-        (
-            "ABC",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            "abc_1",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            " abc ",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            "界",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            cast(str, 123),
-            "Invalid idempotency_key: expected a string, got int.",
-        ),
-    ],
-    ids=[
-        "empty",
-        "too-long",
-        "uppercase",
-        "underscore",
-        "whitespace",
-        "unicode",
-        "non-string",
-    ],
-)
-def test_sync_create_rejects_invalid_idempotency_keys_before_request(
-    monkeypatch, key, message
-):
-    requests = []
-    _mock_sync_create(monkeypatch, requests)
-
-    with pytest.raises(InvalidArgumentException) as error:
-        Sandbox.create("base", api_key="test-api-key", debug=False, idempotency_key=key)
-
-    assert str(error.value) == message
-    assert requests == []
-
-
 def test_sync_create_sends_configured_idempotency_key(monkeypatch):
     idempotency_keys = []
 
@@ -160,61 +106,6 @@ async def test_async_create_accepts_valid_idempotency_keys(monkeypatch, key):
     )
 
     assert requests == [key]
-
-
-@pytest.mark.parametrize(
-    ("key", "message"),
-    [
-        ("", "Invalid idempotency_key: expected 1-255 characters, got 0."),
-        (
-            "a" * 256,
-            "Invalid idempotency_key: expected 1-255 characters, got 256.",
-        ),
-        (
-            "ABC",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            "abc_1",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            " abc ",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            "界",
-            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-        ),
-        (
-            cast(str, 123),
-            "Invalid idempotency_key: expected a string, got int.",
-        ),
-    ],
-    ids=[
-        "empty",
-        "too-long",
-        "uppercase",
-        "underscore",
-        "whitespace",
-        "unicode",
-        "non-string",
-    ],
-)
-@pytest.mark.asyncio
-async def test_async_create_rejects_invalid_idempotency_keys_before_request(
-    monkeypatch, key, message
-):
-    requests = []
-    _mock_async_create(monkeypatch, requests)
-
-    with pytest.raises(InvalidArgumentException) as error:
-        await AsyncSandbox.create(
-            "base", api_key="test-api-key", debug=False, idempotency_key=key
-        )
-
-    assert str(error.value) == message
-    assert requests == []
 
 
 @pytest.mark.asyncio

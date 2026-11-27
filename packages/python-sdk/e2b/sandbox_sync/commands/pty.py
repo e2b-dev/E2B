@@ -20,6 +20,8 @@ from e2b.envd.rpc import handle_rpc_exception_with_health, kill_process
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
+    pid_selector,
+    pty_size,
     timeout_to_ms,
 )
 from e2b.envd.client_sync import as_stream, create_rpc_client
@@ -94,7 +96,7 @@ class Pty:
         try:
             self._rpc.send_input(
                 process_pb.SendInputRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    process=pid_selector(pid),
                     input=process_pb.ProcessInput(
                         input=Oneof("pty", data),
                     ),
@@ -165,9 +167,7 @@ class Pty:
                         args=["-i", "-l"],
                         cwd=cwd,
                     ),
-                    pty=process_pb.PTY(
-                        size=process_pb.PTY.Size(rows=size.rows, cols=size.cols)
-                    ),
+                    pty=process_pb.PTY(size=pty_size(size)),
                 ),
                 headers={
                     **authentication_header(self._envd_version, user),
@@ -212,7 +212,7 @@ class Pty:
         events = as_stream(
             self._rpc.connect(
                 process_pb.ConnectRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    process=pid_selector(pid),
                 ),
                 headers={
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
@@ -255,9 +255,9 @@ class Pty:
         try:
             self._rpc.update(
                 process_pb.UpdateRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    process=pid_selector(pid),
                     pty=process_pb.PTY(
-                        size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
+                        size=pty_size(size),
                     ),
                 ),
                 timeout_ms=timeout_to_ms(

@@ -255,6 +255,8 @@ describe('Template.listBuilds', () => {
     [{ statuses: ['ready', 'error', 'ready'] }, ['ready,error', null]],
     // an empty filter is not sent
     [{ statuses: [], tags: [] }, [null, null]],
+    // the API knows the statuses, so a name is sent for it to judge
+    [{ statuses: ['done'] } as never, ['done', null]],
   ])('sends the filters %j as %j', async (filters, sent) => {
     await Template.listBuilds('abc', { ...opts, ...filters }).nextItems()
 
@@ -283,10 +285,6 @@ describe('Template.listBuilds', () => {
   })
 
   test.each([
-    [
-      { statuses: ['done'] },
-      "Unknown build status 'done', expected one of: building, waiting, ready, error.",
-    ],
     [
       { tags: ['v2', ''] },
       "Invalid tag '': a tag must not be empty or contain a comma.",

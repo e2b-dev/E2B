@@ -31,6 +31,7 @@ from e2b.envd.rpc import handle_rpc_exception_with_health, kill_process
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
+    pid_selector,
     timeout_to_ms,
 )
 from e2b.envd.client_sync import as_stream, create_rpc_client
@@ -144,7 +145,7 @@ class Commands:
         try:
             self._rpc.send_input(
                 process_pb.SendInputRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    process=pid_selector(pid),
                     input=process_pb.ProcessInput(
                         input=Oneof(
                             "stdin", data.encode() if isinstance(data, str) else data
@@ -205,7 +206,7 @@ class Commands:
         try:
             self._rpc.close_stdin(
                 process_pb.CloseStdinRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    process=pid_selector(pid),
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -528,7 +529,7 @@ class Commands:
         events = as_stream(
             self._rpc.connect(
                 process_pb.ConnectRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    process=pid_selector(pid),
                 ),
                 headers={
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),

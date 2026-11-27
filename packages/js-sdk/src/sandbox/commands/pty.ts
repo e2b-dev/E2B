@@ -9,6 +9,7 @@ import {
   KEEPALIVE_PING_INTERVAL_SEC,
   setupRequestController,
 } from '../../connectionConfig'
+import { assertPid, assertPtySize, resolveTimeoutMs } from '../../validation'
 import { CommandHandle } from './commandHandle'
 import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 import {
@@ -102,6 +103,11 @@ export class Pty {
    * @returns handle to interact with the PTY.
    */
   async create(opts: PtyCreateOpts) {
+    assertPtySize(opts)
+    const timeoutMs = resolveTimeoutMs(
+      opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+      'timeoutMs'
+    )
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const envs = { ...(opts?.envs ?? {}) }
@@ -135,7 +141,7 @@ export class Pty {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+        timeoutMs,
       }
     )
 
@@ -170,6 +176,11 @@ export class Pty {
    * @returns handle to interact with the PTY.
    */
   async connect(pid: number, opts?: PtyConnectOpts): Promise<CommandHandle> {
+    assertPid(pid)
+    const timeoutMs = resolveTimeoutMs(
+      opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+      'timeoutMs'
+    )
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -192,7 +203,7 @@ export class Pty {
         headers: {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
-        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+        timeoutMs,
       }
     )
 
@@ -230,6 +241,8 @@ export class Pty {
     data: Uint8Array,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<void> {
+    assertPid(pid)
+
     try {
       await this.rpc.sendInput(
         {
@@ -285,6 +298,8 @@ export class Pty {
     pid: number,
     opts: CommandStreamInputOpts = {}
   ): CommandInputHandle {
+    assertPid(pid)
+
     return new CommandInputHandle(
       this.streamingRpc,
       pid,
@@ -310,6 +325,9 @@ export class Pty {
     },
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<void> {
+    assertPid(pid)
+    assertPtySize(size)
+
     try {
       await this.rpc.update(
         {
@@ -348,6 +366,8 @@ export class Pty {
     pid: number,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
+    assertPid(pid)
+
     return killProcess(
       this.rpc,
       pid,

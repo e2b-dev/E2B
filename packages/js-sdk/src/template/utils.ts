@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import url from 'node:url'
 import { parse, type StackFrame } from 'error-stack-parser-es'
-import { dynamicImport } from '../utils'
+import { dynamicImport, shellQuote } from '../utils'
 import { InvalidArgumentError, TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import { PatternMatcher } from '@e2b/dockerfile-utils'
@@ -532,7 +532,33 @@ export function getCallerDirectory(): string | undefined {
  * ```
  */
 export function padOctal(mode: number): string {
+  // Written into a `chmod`/`mkdir -m` command; anything else would be written
+  // as `0NaN`, or as a mode nobody asked for.
+  if (!Number.isInteger(mode) || mode < 0 || mode > 0o7777) {
+    throw new InvalidArgumentError(
+      `Invalid mode=${typeof mode === 'number' ? mode : JSON.stringify(mode)}: expected an integer between 0 and 0o7777, e.g. 0o755.`
+    )
+  }
+
   return mode.toString(8).padStart(4, '0')
+}
+
+// What makes the shell split an argument or redirect it, and what shows an
+// argument was written for the shell on purpose.
+const SHELL_OPERATOR = /[<>|&;()]/
+const SHELL_SYNTAX = /[\s'"\\$`]/
+
+/**
+ * Quote a package argument of an install command when the shell would read
+ * part of it as an operator: `numpy>=2` installs `numpy` and redirects the
+ * output into a file named `=2`. An argument written for the shell already
+ * (several words, quotes, a variable) is passed as it is, e.g.
+ * `-r requirements.txt`.
+ */
+export function quotePackage(arg: string): string {
+  return SHELL_OPERATOR.test(arg) && !SHELL_SYNTAX.test(arg)
+    ? shellQuote(arg)
+    : arg
 }
 
 /**

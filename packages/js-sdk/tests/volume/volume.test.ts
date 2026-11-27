@@ -2,6 +2,7 @@ import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
 import {
+  InvalidArgumentError,
   Volume,
   VolumeError,
   VolumeNotFoundError,
@@ -379,5 +380,31 @@ describe('VolumeConnectionConfig request timeout', () => {
     const config = new VolumeConnectionConfig(vol, { requestTimeoutMs: 0 })
     expect(config.requestTimeoutMs).toBe(0)
     expect(config.getSignal()).toBeUndefined()
+  })
+})
+
+describe('volume ID in the request path', () => {
+  // An empty ID or a dot segment makes the URL the volume list.
+  const opts = { apiKey: 'e2b_' + '0'.repeat(40) }
+  const requests: string[] = []
+  const onRequest = ({ request }: { request: Request }) => {
+    requests.push(`${request.method} ${new URL(request.url).pathname}`)
+  }
+
+  beforeAll(() => server.events.on('request:start', onRequest))
+  afterAll(() => server.events.removeListener('request:start', onRequest))
+  afterEach(() => {
+    requests.length = 0
+  })
+
+  describe.each<[string, (volumeId: string) => Promise<unknown>]>([
+    ['connect', (volumeId) => Volume.connect(volumeId, opts)],
+    ['getInfo', (volumeId) => Volume.getInfo(volumeId, opts)],
+    ['destroy', (volumeId) => Volume.destroy(volumeId, opts)],
+  ])('Volume.%s', (_, call) => {
+    it.each(['', '.', '..'])('refuses %j', async (volumeId) => {
+      await expect(call(volumeId)).rejects.toThrow(InvalidArgumentError)
+      expect(requests).toEqual([])
+    })
   })
 })

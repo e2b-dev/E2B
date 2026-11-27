@@ -1,4 +1,5 @@
 import { sha256 } from '../utils'
+import { InvalidArgumentError } from '../errors'
 
 /**
  * Get the URL signature for the specified path, operation and user.
@@ -30,6 +31,18 @@ export async function getSignature({
   if (!envdAccessToken) {
     throw new Error(
       'Access token is not set and signature cannot be generated!'
+    )
+  }
+
+  // Added to the current time below: a string would be joined to it as text
+  // and sign a URL that never expires. Zero and negative values are whole
+  // numbers too, and sign a URL that has expired already.
+  if (
+    expirationInSeconds != null &&
+    !Number.isSafeInteger(expirationInSeconds)
+  ) {
+    throw new InvalidArgumentError(
+      `Invalid useSignatureExpiration=${typeof expirationInSeconds === 'number' ? expirationInSeconds : JSON.stringify(expirationInSeconds)}: expected a whole number of seconds.`
     )
   }
 

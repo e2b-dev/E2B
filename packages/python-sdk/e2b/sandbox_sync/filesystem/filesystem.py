@@ -33,6 +33,7 @@ from e2b.envd.versions import (
     ENVD_VERSION_RECURSIVE_WATCH,
     ENVD_VERSION_WATCH_NETWORK_MOUNTS,
 )
+from e2b.validation import assert_non_empty_path
 from e2b.exceptions import (
     FileNotFoundException,
     InvalidArgumentException,
@@ -598,6 +599,8 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         """
+        # envd would remove the home directory.
+        assert_non_empty_path(path, "path")
         try:
             self._rpc.remove(
                 filesystem_pb.RemoveRequest(path=path),
@@ -626,6 +629,9 @@ class Filesystem:
 
         :return: Information about the renamed file or directory
         """
+        # envd would move the home directory, or move into it.
+        assert_non_empty_path(old_path, "old_path")
+        assert_non_empty_path(new_path, "new_path")
         try:
             r = self._rpc.move(
                 filesystem_pb.MoveRequest(

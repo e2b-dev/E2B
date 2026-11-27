@@ -81,7 +81,7 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
                 self.query.template if self.query and self.query.template else UNSET
             ),
             order=order,
-            limit=self.limit if self.limit else UNSET,
+            limit=self.limit if self.limit is not None else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
         )
 
@@ -135,7 +135,7 @@ class AsyncSnapshotPaginator(SnapshotPaginatorBase):
             client=api_client,
             sandbox_id=self.sandbox_id if self.sandbox_id else UNSET,
             name=self.name if self.name else UNSET,
-            limit=self.limit if self.limit else UNSET,
+            limit=self.limit if self.limit is not None else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
         )
 

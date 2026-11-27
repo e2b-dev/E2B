@@ -110,19 +110,9 @@ export type BuildInfo = {
 export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
 
 /**
- * Every status of a template build.
- */
-export const TEMPLATE_BUILD_STATUSES = [
-  'building',
-  'waiting',
-  'ready',
-  'error',
-] as const
-
-/**
  * Status of a template build.
  */
-export type TemplateBuildStatus = (typeof TEMPLATE_BUILD_STATUSES)[number]
+export type TemplateBuildStatus = components['schemas']['TemplateBuildStatus']
 
 /**
  * Reason for the current build status (typically for errors).

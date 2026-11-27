@@ -41,20 +41,23 @@ export function resolveRetries(retries: number): number {
   return retries
 }
 
-const IDEMPOTENCY_KEY_PATTERN = /^[a-z0-9-]{1,255}$/
+// What reaches the API as the header value it was given: printable ASCII
+// that neither starts nor ends with a space.
+const SENDABLE_HEADER_VALUE = /^[\x21-\x7e]([\x20-\x7e]*[\x21-\x7e])?$/
 
+/**
+ * Check that the key reaches the API as it was given. Which keys the API
+ * takes (length, characters) is for the API to say; refused here is only what
+ * it would never see: an empty value, which is no key at all, and a value the
+ * HTTP client trims or cannot put in a header.
+ */
 export function resolveIdempotencyKey(
   key: string | undefined
 ): string | undefined {
   if (key === undefined) return undefined
-  if (key.length < 1 || key.length > 255) {
+  if (typeof key !== 'string' || !SENDABLE_HEADER_VALUE.test(key)) {
     throw new InvalidArgumentError(
-      `Invalid idempotencyKey: expected 1-255 characters, got ${key.length}.`
-    )
-  }
-  if (!IDEMPOTENCY_KEY_PATTERN.test(key)) {
-    throw new InvalidArgumentError(
-      'Invalid idempotencyKey: only lowercase letters, digits and hyphens are allowed.'
+      'Invalid idempotencyKey: expected a non-empty string of printable ASCII characters that does not start or end with a space.'
     )
   }
   return key

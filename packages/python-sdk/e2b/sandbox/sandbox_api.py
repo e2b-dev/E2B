@@ -70,6 +70,7 @@ from e2b.api.client.models.sandbox import Sandbox as CreatedSandbox
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams
 from e2b.exceptions import InvalidArgumentException
+from e2b.validation import assert_string_values, to_string_list
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.iam import (
     IamTokenPlaceholders,
@@ -869,17 +870,22 @@ def resolve_connect_resume(
 
 
 def _resolve_network_selector(
+    field: str,
     selector: Optional[SandboxNetworkSelector],
     rules: Mapping[str, List[SandboxNetworkRule]],
 ) -> Optional[List[str]]:
     if selector is None:
         return None
 
+    resolved: Any = selector
     if callable(selector):
         ctx = SandboxNetworkSelectorContext(all_traffic=ALL_TRAFFIC, rules=rules)
-        return list(selector(ctx))
+        resolved = selector(ctx)
 
-    return list(selector)
+    # A callable that returns nothing and a string given for a list are named
+    # here: the first is no restriction at all, the second one entry per
+    # character.
+    return to_string_list(resolved, f"network {field}")
 
 
 def _build_transform_context(
@@ -936,6 +942,7 @@ def _build_client_rules(
 
             client_transform = ClientSandboxNetworkTransform()
             headers = transform.get("headers")
+            assert_string_values(headers, f"network rules[{host!r}] transform headers")
             if headers:
                 client_headers = ClientSandboxNetworkTransformHeaders()
                 client_headers.additional_properties = dict(headers)
@@ -1014,8 +1021,8 @@ def _build_network_egress(
     endpoint-specific rules attrs class.
     """
     rules = network.get("rules") or {}
-    allow_out = _resolve_network_selector(network.get("allow_out"), rules)
-    deny_out = _resolve_network_selector(network.get("deny_out"), rules)
+    allow_out = _resolve_network_selector("allow_out", network.get("allow_out"), rules)
+    deny_out = _resolve_network_selector("deny_out", network.get("deny_out"), rules)
     # `is not None` also covers an explicit `"egress_proxy": None`, which
     # untyped callers spell "no proxy" as; the JS SDK's `!= null` does the
     # same. Do not use truthiness — an empty dict must reach the builder so
@@ -1032,7 +1039,9 @@ def _build_network_egress(
     # `is not None` so an empty list is sent (it means "no DNS server"), like
     # the JS SDK's `!= null`.
     if network.get("dns_servers") is not None:
-        body["dns_servers"] = list(network["dns_servers"])
+        body["dns_servers"] = to_string_list(
+            network["dns_servers"], "network dns_servers"
+        )
     if "rules" in network and network["rules"] is not None:
         body["rules"] = _build_client_rules(network["rules"], ctx).additional_properties
 

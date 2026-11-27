@@ -4,6 +4,8 @@ import time
 
 from typing import Optional, TypedDict, Literal
 
+from e2b.exceptions import InvalidArgumentException
+
 Operation = Literal["read", "write"]
 
 
@@ -24,6 +26,18 @@ def get_signature(
     """
     if not envd_access_token:
         raise ValueError("Access token is not set and signature cannot be generated!")
+
+    # Added to the current time below; a fraction would sign a URL envd
+    # refuses when it is used. Zero and negative values are whole numbers too,
+    # and sign a URL that has expired already.
+    if expiration_in_seconds is not None and (
+        isinstance(expiration_in_seconds, bool)
+        or not isinstance(expiration_in_seconds, int)
+    ):
+        raise InvalidArgumentException(
+            f"Invalid use_signature_expiration={expiration_in_seconds!r}: "
+            "expected a whole number of seconds."
+        )
 
     expiration = (
         int(time.time()) + expiration_in_seconds
