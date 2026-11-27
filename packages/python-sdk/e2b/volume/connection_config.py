@@ -118,8 +118,11 @@ class VolumeConnectionConfig:
         self.proxy = proxy
         self.http_version: HttpVersion = resolve_http_version(http_version)
 
+        # An explicitly provided User-Agent wins, like in the main
+        # `ConnectionConfig` and the JS SDK's volume client; the SDK default
+        # only fills in when the caller did not send one.
         self.headers = dict(headers) if headers else {}
-        self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
+        self.headers.setdefault("User-Agent", f"e2b-python-sdk/{package_version}")
 
         self.request_timeout = self._get_request_timeout(
             REQUEST_TIMEOUT, request_timeout

@@ -72,6 +72,16 @@ def test_volume_config_does_not_mutate_caller_headers():
     assert "User-Agent" in config.headers
 
 
+def test_volume_user_agent_explicit_value_is_preserved():
+    config = VolumeConnectionConfig(headers={"User-Agent": "my-agent/1.2"})
+    assert config.headers["User-Agent"] == "my-agent/1.2"
+
+
+def test_volume_user_agent_default_when_not_given():
+    config = VolumeConnectionConfig()
+    assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
+
+
 def test_volume_request_timeout_defaults_to_60_seconds():
     config = VolumeConnectionConfig()
     assert config.request_timeout == 60.0
