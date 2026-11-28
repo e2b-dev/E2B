@@ -229,6 +229,11 @@ class _DockerfileConverter:
         self._vars: Dict[str, str] = {}
         # Expands the ARG / ENV values declared earlier in the Dockerfile.
         self._env_lex = ShellLex(escape_token, env=self._vars, skip_unset_env=False)
+        # ARGs declared before FROM are the only variables FROM can reference.
+        self._global_args: Dict[str, str] = {}
+        self._from_lex = ShellLex(
+            escape_token, env=self._global_args, skip_unset_env=False
+        )
         self._user_changed = False
         self._workdir_changed = False
         self._cmd: Optional[_StartCommand] = None
@@ -242,6 +247,12 @@ class _DockerfileConverter:
             raise DockerfileSyntaxError("Dockerfile must contain a FROM instruction")
 
         from_instruction = from_instructions[0]
+        for instruction in instructions:
+            if (
+                instruction.name == "ARG"
+                and instruction.start_line < from_instruction.start_line
+            ):
+                self._declare_global_args(instruction)
         base_image = self._handle_from(from_instruction)
 
         # Set the user and workdir to the Docker defaults
@@ -379,7 +390,14 @@ class _DockerfileConverter:
                 "FROM requires either one or three arguments",
                 instruction.start_line,
             )
-        return self._expand(instruction, args[0])
+        return self._expand(instruction, args[0], self._from_lex)
+
+    def _declare_global_args(self, instruction: DockerfileInstruction) -> None:
+        for arg in instruction.args:
+            name, sep, value = arg.partition("=")
+            self._global_args[self._expand(instruction, name)] = (
+                self._expand(instruction, value, self._from_lex) if sep else ""
+            )
 
     def _handle_run(self, instruction: DockerfileInstruction) -> None:
         self._parse_flags(instruction, _RUN_FLAGS)
