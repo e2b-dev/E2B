@@ -217,6 +217,9 @@ class DockerfileConverter {
   /** Expands the `ARG` / `ENV` values declared earlier in the Dockerfile. */
   private readonly envLex: ShellLex
   private readonly vars = new Map<string, string>()
+  /** `ARG`s declared before `FROM`: the only variables `FROM` can reference. */
+  private readonly globalArgs = new Map<string, string>()
+  private readonly fromLex: ShellLex
   private userChanged = false
   private workdirChanged = false
   private cmd?: StartCommand
@@ -229,6 +232,10 @@ class DockerfileConverter {
     this.lex = new ShellLex(escapeToken)
     this.envLex = new ShellLex(escapeToken, {
       env: this.vars,
+      skipUnsetEnv: false,
+    })
+    this.fromLex = new ShellLex(escapeToken, {
+      env: this.globalArgs,
       skipUnsetEnv: false,
     })
   }
@@ -247,6 +254,14 @@ class DockerfileConverter {
     }
 
     const fromInstruction = fromInstructions[0]
+    for (const instruction of instructions) {
+      if (
+        instruction.name === 'ARG' &&
+        instruction.startLine < fromInstruction.startLine
+      ) {
+        this.declareGlobalArgs(instruction)
+      }
+    }
     const baseImage = this.handleFrom(fromInstruction)
 
     // Set the user and workdir to the Docker defaults
@@ -425,7 +440,19 @@ class DockerfileConverter {
         instruction.startLine
       )
     }
-    return this.expand(instruction, args[0])
+    return this.expand(instruction, args[0], this.fromLex)
+  }
+
+  private declareGlobalArgs(instruction: DockerfileInstruction) {
+    for (const arg of instruction.args) {
+      const eq = arg.indexOf('=')
+      this.globalArgs.set(
+        this.expand(instruction, eq === -1 ? arg : arg.slice(0, eq)),
+        eq === -1
+          ? ''
+          : this.expand(instruction, arg.slice(eq + 1), this.fromLex)
+      )
+    }
   }
 
   private handleRun(instruction: DockerfileInstruction) {

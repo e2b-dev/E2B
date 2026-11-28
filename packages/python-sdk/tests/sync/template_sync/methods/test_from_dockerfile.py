@@ -483,3 +483,17 @@ def test_from_dockerfile_rejects_invalid_dockerfiles():
     for dockerfile, expected in cases:
         with pytest.raises(DockerfileSyntaxError, match=expected):
             Template().from_dockerfile(dockerfile)
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_expands_args_declared_before_from():
+    cases = [
+        ("ARG VERSION=24\nFROM node:${VERSION}", "node:24"),
+        ("ARG VERSION=24\nFROM node:$VERSION AS base", "node:24"),
+        ("ARG NAME=node TAG\nARG IMAGE=${NAME}:${TAG:-24}\nFROM $IMAGE", "node:24"),
+        # Only ARGs declared before FROM are in scope
+        ("FROM node:${VERSION:-24}\nARG VERSION=20", "node:24"),
+    ]
+    for dockerfile, expected in cases:
+        template = Template().from_dockerfile(dockerfile)
+        assert template._template._base_image == expected

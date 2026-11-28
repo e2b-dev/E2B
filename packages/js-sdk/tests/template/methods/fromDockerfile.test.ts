@@ -563,3 +563,18 @@ buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
     )
   }
 })
+
+buildTemplateTest('fromDockerfile expands ARGs declared before FROM', () => {
+  const cases = [
+    ['ARG VERSION=24\nFROM node:${VERSION}', 'node:24'],
+    ['ARG VERSION=24\nFROM node:$VERSION AS base', 'node:24'],
+    ['ARG NAME=node TAG\nARG IMAGE=${NAME}:${TAG:-24}\nFROM $IMAGE', 'node:24'],
+    // Only ARGs declared before FROM are in scope
+    ['FROM node:${VERSION:-24}\nARG VERSION=20', 'node:24'],
+  ]
+  for (const [dockerfile, expected] of cases) {
+    const template = Template().fromDockerfile(dockerfile)
+    // @ts-expect-error - baseImage is not a property of TemplateBuilder
+    assert.equal(template.baseImage, expected)
+  }
+})
